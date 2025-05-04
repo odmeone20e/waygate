@@ -1,0 +1,12 @@
+**/waygate.db
+**/waygate.db-journal
+**/waygate.db-lock
+**/waygate.db-trace
+**/waygate.db-wal
+**/waygate.db-shm
+
+**/.env
+**/.env.*
+
+**/.git
+
