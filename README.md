@@ -65,9 +65,10 @@ waygate server new
 ## 2. SERVER node setup
 
 ```bash
-mkdir -p ./fs/app/waygate && \
+mkdir -p ./fs/app/waygate && mkdir -p ./fs/data && \
 docker run --privileged --sysctl "net.ipv4.ip_forward=1" --sysctl "net.ipv4.conf.all.src_valid_mark=1" \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ./fs/data:/data \
     -v ./fs/app/waygate:/app/waygate \
     --name waygate-server \
     anybotsllc/waygate join <JOIN-TOKEN>
