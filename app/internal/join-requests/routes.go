@@ -3,6 +3,7 @@ package join_requests
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 	"waygate/internal/encryption"
 	join_requests_types "waygate/internal/join-requests/types"
 	"waygate/internal/logger"
@@ -116,11 +117,10 @@ func RegisterRoutes(mux *http.ServeMux, db *gorm.DB) {
 					return
 				}
 
-				err = terminal.RestartServices()
+				terminal.RestartServices(true, false, false)
 
-				if err != nil {
-					logger.Error("[%s] Failed to restart services: %v", r.Method, err)
-				}
+				// Schedule service restart for 10 seconds later to ensure coredns picks up the new server node
+				terminal.ScheduleRestart(10*time.Second, false, true, true)
 
 				responsePayload.NodeConfig = serverNode
 			default:
