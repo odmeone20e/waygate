@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="waygate-with-slogan.png" alt="waygate logo" width="300" />
+  <img src="waygate-with-slogan.png" alt="waygate logo" width="200" />
 </p>
 
 <h1 align="center" style="color:#23132d">
