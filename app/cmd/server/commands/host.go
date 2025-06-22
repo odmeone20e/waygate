@@ -211,7 +211,7 @@ var StartHostCmd = &cobra.Command{
 var StatusHostCmd = &cobra.Command{
 	Use:   "status [username@hostname[:port]]",
 	Short: "Check waygate host node status",
-	Long: `Check the status of waygate host node: SSH connection, Docker installation, and Wireport status.
+	Long: `Check the status of waygate host node: SSH connection, Docker installation, and waygate status.
 
 If no username@hostname[:port] is provided, the command will use the bootstrapped host node.`,
 	Args: cobra.MaximumNArgs(1),
@@ -225,7 +225,7 @@ If no username@hostname[:port] is provided, the command will use the bootstrappe
 			return
 		}
 
-		cmd.Printf("🔍 Checking Wireport Host Status\n")
+		cmd.Printf("🔍 Checking waygate Host Status\n")
 		cmd.Printf("================================\n\n")
 
 		// SSH Connection Check
@@ -261,7 +261,7 @@ If no username@hostname[:port] is provided, the command will use the bootstrappe
 			}
 		} else {
 			cmd.Printf("   Status: ❌ Not Installed\n\n")
-			cmd.Printf("💡 Install Docker to continue with Wireport setup.\n\n")
+			cmd.Printf("💡 Install Docker to continue with waygate setup.\n\n")
 			return
 		}
 
@@ -283,8 +283,8 @@ If no username@hostname[:port] is provided, the command will use the bootstrappe
 		}
 		cmd.Printf("\n")
 
-		// Wireport Status Check
-		cmd.Printf("🚀 Wireport Status\n")
+		// waygate Status Check
+		cmd.Printf("🚀 waygate Status\n")
 		isRunning, err := sshService.IsWireportHostContainerRunning()
 		if err != nil {
 			cmd.Printf("   Status: ❌ Check Failed\n")
@@ -309,12 +309,12 @@ If no username@hostname[:port] is provided, the command will use the bootstrappe
 				cmd.Printf("   Details: %s\n", containerStatus)
 			}
 
-			cmd.Printf("   💡 Run 'waygate host bootstrap %s@%s:%d' to install and start Wireport.\n", creds.Username, creds.Host, creds.Port)
+			cmd.Printf("   💡 Run 'waygate host bootstrap %s@%s:%d' to install and start waygate.\n", creds.Username, creds.Host, creds.Port)
 		}
 		cmd.Printf("\n")
 
 		// Docker Network Status Check
-		cmd.Printf("🌐 Wireport Docker Network\n")
+		cmd.Printf("🌐 waygate Docker Network\n")
 		networkStatus, err := sshService.GetWireportNetworkStatus()
 		if err != nil {
 			cmd.Printf("   Status: ❌ Check Failed\n")
@@ -326,7 +326,7 @@ If no username@hostname[:port] is provided, the command will use the bootstrappe
 			cmd.Printf("   Network: ✅ '%s' exists\n", strings.TrimSpace(networkStatus))
 		} else {
 			cmd.Printf("   Network: ❌ %s not found\n", config.Config.DockerNetworkName)
-			cmd.Printf("💡 Network will be created when Wireport starts.\n")
+			cmd.Printf("💡 Network will be created when waygate starts.\n")
 		}
 		cmd.Printf("\n")
 
@@ -348,7 +348,7 @@ var BootstrapHostCmd = &cobra.Command{
 			return
 		}
 
-		cmd.Printf("🚀 Wireport Host Bootstrap\n")
+		cmd.Printf("🚀 waygate Host Bootstrap\n")
 		cmd.Printf("==========================\n\n")
 
 		// SSH Connection
@@ -376,7 +376,7 @@ var BootstrapHostCmd = &cobra.Command{
 
 		if isRunning {
 			cmd.Printf("   Status: ✅ Already Running\n")
-			cmd.Printf("   💡 Wireport host container is already running on this host and bootstrapping is not required.\n\n")
+			cmd.Printf("   💡 waygate host container is already running on this host and bootstrapping is not required.\n\n")
 			return
 		}
 
@@ -384,7 +384,7 @@ var BootstrapHostCmd = &cobra.Command{
 		cmd.Printf("   💡 Proceeding with installation...\n\n")
 
 		// Installation
-		cmd.Printf("📦 Installing Wireport...\n")
+		cmd.Printf("📦 Installing waygate...\n")
 		cmd.Printf("   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
 
 		_, err = sshService.InstallWireport()
@@ -407,10 +407,10 @@ var BootstrapHostCmd = &cobra.Command{
 
 		if installationConfirmed {
 			cmd.Printf("   Status: ✅ Verified Successfully, Running\n")
-			cmd.Printf("   🎉 Wireport has been successfully installed and started on the host!\n\n")
+			cmd.Printf("   🎉 waygate has been successfully installed and started on the host!\n\n")
 		} else {
 			cmd.Printf("   Status: ❌ Verified Failed\n")
-			cmd.Printf("   💡 Wireport container was not found running after installation.\n\n")
+			cmd.Printf("   💡 waygate container was not found running after installation.\n\n")
 		}
 
 		cmd.Printf("✨ Bootstrap process completed!\n")
