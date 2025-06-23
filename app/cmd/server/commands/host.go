@@ -2,15 +2,10 @@ package commands
 
 import (
 	"fmt"
-	"net"
-	"net/http"
 	"strconv"
 	"strings"
 	"syscall"
 
-	"waygate/cmd/server/config"
-	"waygate/internal/nodes/types"
-	"waygate/internal/routes"
 	"waygate/internal/ssh"
 
 	"github.com/spf13/cobra"
@@ -155,56 +150,7 @@ var StartHostCmd = &cobra.Command{
 	Short: "Start waygate in host mode",
 	Long:  `Start waygate in host mode. It will handle network connections and state management.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		router := routes.Router(dbInstance)
-
-		publicIP, err := join_requests_service.GetPublicIP()
-
-		if err != nil {
-			cmd.PrintErrf("Failed to get public IP: %v\n", err)
-			return
-		}
-
-		serverError := make(chan error, 1)
-
-		if !HostStartConfigureOnly {
-			go func() {
-				if err := http.ListenAndServe(fmt.Sprintf(":%d", config.Config.ControlServerPort), router); err != nil {
-					serverError <- err
-				}
-			}()
-		}
-
-		hostNode, err := nodes_repository.EnsureHostNode(types.IPMarshable{
-			IP: net.ParseIP(*publicIP),
-		}, config.Config.WGPublicPort)
-
-		if err != nil {
-			cmd.PrintErrf("waygate host node start failed: %v\n", err)
-			cmd.PrintErrf("Failed to ensure host node: %v\n", err)
-			return
-		}
-
-		publicServices := public_services_repository.GetAll()
-
-		err = hostNode.SaveConfigs(publicServices, true)
-
-		if err != nil {
-			cmd.PrintErrf("Failed to save configs: %v\n", err)
-			return
-		}
-
-		if !HostStartConfigureOnly {
-			cmd.Printf("waygate server has started on host: %s\n", *hostNode.WGPublicIp)
-		} else {
-			cmd.Printf("waygate has been configured on the host: %s\n", *hostNode.WGPublicIp)
-		}
-
-		if !HostStartConfigureOnly {
-			// Block on the server error channel
-			if err := <-serverError; err != nil {
-				cmd.PrintErrf("Server error: %v\n", err)
-			}
-		}
+		commandsService.HostStart(join_requests_service, nodes_repository, public_services_repository, dbInstance, cmd.OutOrStdout(), cmd.ErrOrStderr(), HostStartConfigureOnly)
 	},
 }
 
@@ -216,121 +162,15 @@ var StatusHostCmd = &cobra.Command{
 If no username@hostname[:port] is provided, the command will use the bootstrapped host node.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		sshService := ssh.NewService()
-
 		// Build credentials from positional argument or flags
 		creds, err := buildSSHCredentials(cmd, args)
+
 		if err != nil {
 			cmd.PrintErrf("Error: %v\n", err)
 			return
 		}
 
-		cmd.Printf("🔍 Checking waygate Host Status\n")
-		cmd.Printf("================================\n\n")
-
-		// SSH Connection Check
-		cmd.Printf("📡 SSH Connection\n")
-		cmd.Printf("   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
-
-		err = sshService.Connect(creds)
-		if err != nil {
-			cmd.Printf("   Status: ❌ Failed\n")
-			cmd.Printf("   Error:  %v\n\n", err)
-			return
-		}
-
-		defer sshService.Close()
-		cmd.Printf("   Status: ✅ Connected\n\n")
-
-		// Docker Installation Check
-		cmd.Printf("🐳 Docker Installation\n")
-		dockerInstalled, err := sshService.IsDockerInstalled()
-		if err != nil {
-			cmd.Printf("   Status: ❌ Check Failed\n")
-			cmd.Printf("   Error:  %v\n\n", err)
-			return
-		}
-
-		if dockerInstalled {
-			cmd.Printf("   Status: ✅ Installed\n")
-
-			// Get Docker version
-			dockerVersion, err := sshService.GetDockerVersion()
-			if err == nil {
-				cmd.Printf("   Version: %s\n", dockerVersion)
-			}
-		} else {
-			cmd.Printf("   Status: ❌ Not Installed\n\n")
-			cmd.Printf("💡 Install Docker to continue with waygate setup.\n\n")
-			return
-		}
-
-		// Docker Permissions Check
-		cmd.Printf("   Permissions: ")
-		dockerAccessible, err := sshService.IsDockerAccessible()
-		if err != nil {
-			cmd.Printf("❌ Check Failed\n")
-			cmd.Printf("   Error:  %v\n\n", err)
-			return
-		}
-
-		if dockerAccessible {
-			cmd.Printf("✅ User has access\n")
-		} else {
-			cmd.Printf("❌ User lacks permissions\n")
-			cmd.Printf("💡 Add user to docker group or use sudo.\n\n")
-			return
-		}
-		cmd.Printf("\n")
-
-		// waygate Status Check
-		cmd.Printf("🚀 waygate Status\n")
-		isRunning, err := sshService.IsWireportHostContainerRunning()
-		if err != nil {
-			cmd.Printf("   Status: ❌ Check Failed\n")
-			cmd.Printf("   Error:  %v\n\n", err)
-			return
-		}
-
-		if isRunning {
-			cmd.Printf("   Status: ✅ Running\n")
-
-			// Get detailed container status
-			containerStatus, err := sshService.GetWireportContainerStatus()
-			if err == nil && containerStatus != "" {
-				cmd.Printf("   Details: %s\n", containerStatus)
-			}
-		} else {
-			cmd.Printf("   Status: ❌ Not Running\n")
-
-			// Check if container exists but is stopped
-			containerStatus, err := sshService.GetWireportContainerStatus()
-			if err == nil && containerStatus != "" {
-				cmd.Printf("   Details: %s\n", containerStatus)
-			}
-
-			cmd.Printf("   💡 Run 'waygate host bootstrap %s@%s:%d' to install and start waygate.\n", creds.Username, creds.Host, creds.Port)
-		}
-		cmd.Printf("\n")
-
-		// Docker Network Status Check
-		cmd.Printf("🌐 waygate Docker Network\n")
-		networkStatus, err := sshService.GetWireportNetworkStatus()
-		if err != nil {
-			cmd.Printf("   Status: ❌ Check Failed\n")
-			cmd.Printf("   Error:  %v\n\n", err)
-			return
-		}
-
-		if networkStatus != "" {
-			cmd.Printf("   Network: ✅ '%s' exists\n", strings.TrimSpace(networkStatus))
-		} else {
-			cmd.Printf("   Network: ❌ %s not found\n", config.Config.DockerNetworkName)
-			cmd.Printf("💡 Network will be created when waygate starts.\n")
-		}
-		cmd.Printf("\n")
-
-		cmd.Printf("✨ Status check completed successfully!\n")
+		commandsService.HostStatus(creds, cmd.OutOrStdout())
 	},
 }
 
@@ -340,80 +180,14 @@ var BootstrapHostCmd = &cobra.Command{
 	Long:  `Bootstrap waygate host node. It will install waygate on the host node.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		sshService := ssh.NewService()
-
 		creds, err := buildSSHCredentials(cmd, args)
+
 		if err != nil {
 			cmd.PrintErrf("❌ Error: %v\n", err)
 			return
 		}
 
-		cmd.Printf("🚀 waygate Host Bootstrap\n")
-		cmd.Printf("==========================\n\n")
-
-		// SSH Connection
-		cmd.Printf("📡 Connecting to host...\n")
-		cmd.Printf("   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
-
-		err = sshService.Connect(creds)
-		if err != nil {
-			cmd.Printf("   Status: ❌ Failed\n")
-			cmd.Printf("   Error:  %v\n\n", err)
-			return
-		}
-
-		defer sshService.Close()
-		cmd.Printf("   Status: ✅ Connected\n\n")
-
-		// Check if already running
-		cmd.Printf("🔍 Checking current status...\n")
-		isRunning, err := sshService.IsWireportHostContainerRunning()
-		if err != nil {
-			cmd.Printf("   Status: ❌ Check Failed\n")
-			cmd.Printf("   Error:  %v\n\n", err)
-			return
-		}
-
-		if isRunning {
-			cmd.Printf("   Status: ✅ Already Running\n")
-			cmd.Printf("   💡 waygate host container is already running on this host and bootstrapping is not required.\n\n")
-			return
-		}
-
-		cmd.Printf("   Status: ❌ Not Running\n")
-		cmd.Printf("   💡 Proceeding with installation...\n\n")
-
-		// Installation
-		cmd.Printf("📦 Installing waygate...\n")
-		cmd.Printf("   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
-
-		_, err = sshService.InstallWireport()
-		if err != nil {
-			cmd.Printf("   Status: ❌ Installation Failed\n")
-			cmd.Printf("   Error:  %v\n\n", err)
-			return
-		}
-
-		cmd.Printf("   Status: ✅ Installation Completed\n\n")
-
-		// Verification
-		cmd.Printf("✅ Verifying installation...\n")
-		installationConfirmed, err := sshService.IsWireportHostContainerRunning()
-		if err != nil {
-			cmd.Printf("   Status: ❌ Verification Failed\n")
-			cmd.Printf("   Error:  %v\n\n", err)
-			return
-		}
-
-		if installationConfirmed {
-			cmd.Printf("   Status: ✅ Verified Successfully, Running\n")
-			cmd.Printf("   🎉 waygate has been successfully installed and started on the host!\n\n")
-		} else {
-			cmd.Printf("   Status: ❌ Verified Failed\n")
-			cmd.Printf("   💡 waygate container was not found running after installation.\n\n")
-		}
-
-		cmd.Printf("✨ Bootstrap process completed!\n")
+		commandsService.HostBootstrap(creds, cmd.OutOrStdout(), cmd.ErrOrStderr())
 	},
 }
 
