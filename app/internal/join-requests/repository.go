@@ -3,7 +3,7 @@ package join_requests
 import (
 	"encoding/base64"
 	"time"
-	"waygate/internal/encryption"
+	encryption_aes "waygate/internal/encryption/aes"
 	"waygate/internal/join-requests/types"
 	nodeTypes "waygate/internal/nodes/types"
 
@@ -22,7 +22,7 @@ func NewRepository(db *gorm.DB) *Repository {
 }
 
 func (r *Repository) Create(hostAddress nodeTypes.UDPAddrMarshable, dockerSubnet *string, role nodeTypes.NodeRole) (*types.JoinRequest, error) {
-	encryptionKey, err := encryption.GenerateKey()
+	encryptionKey, err := encryption_aes.GenerateAESKey()
 
 	if err != nil {
 		return nil, err
