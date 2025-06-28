@@ -1,11 +1,11 @@
-package join_requests
+package joinrequests
 
 import (
 	"encoding/base64"
 	"time"
 	encryption_aes "waygate/internal/encryption/aes"
 	"waygate/internal/encryption/mtls"
-	"waygate/internal/join-requests/types"
+	"waygate/internal/joinrequests/types"
 	nodeTypes "waygate/internal/nodes/types"
 
 	"gorm.io/gorm"
@@ -31,7 +31,7 @@ func (r *Repository) Create(id string, hostAddress nodeTypes.UDPAddrMarshable, d
 	encryptionKeyBase64 := base64.StdEncoding.EncodeToString(encryptionKey)
 
 	request := &types.JoinRequest{
-		Id:                  id,
+		ID:                  id,
 		EncryptionKeyBase64: encryptionKeyBase64,
 		ClientCertBundle:    *clientCertBundle,
 		HostAddress:         hostAddress.String(),

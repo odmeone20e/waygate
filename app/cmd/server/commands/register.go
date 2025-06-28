@@ -2,27 +2,27 @@ package commands
 
 import (
 	"waygate/internal/commands"
-	join_requests "waygate/internal/join-requests"
+	"waygate/internal/joinrequests"
 	"waygate/internal/nodes"
-	public_services "waygate/internal/public-services"
+	"waygate/internal/publicservices"
 
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
 )
 
 var (
-	dbInstance                 *gorm.DB
-	nodes_repository           *nodes.Repository
-	join_requests_repository   *join_requests.Repository
-	public_services_repository *public_services.Repository
-	commandsService            *commands.Service
+	dbInstance               *gorm.DB
+	nodesRepository          *nodes.Repository
+	joinRequestsRepository   *joinrequests.Repository
+	publicServicesRepository *publicservices.Repository
+	commandsService          *commands.Service
 )
 
 func RegisterCommands(rootCmd *cobra.Command, db *gorm.DB) {
 	dbInstance = db
-	nodes_repository = nodes.NewRepository(db)
-	join_requests_repository = join_requests.NewRepository(db)
-	public_services_repository = public_services.NewRepository(db)
+	nodesRepository = nodes.NewRepository(db)
+	joinRequestsRepository = joinrequests.NewRepository(db)
+	publicServicesRepository = publicservices.NewRepository(db)
 	commandsService = &commands.Service{}
 
 	rootCmd.AddCommand(HostCmd)
