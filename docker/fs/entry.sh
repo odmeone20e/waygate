@@ -16,9 +16,10 @@ if [ "$1" = "host" ]; then
     chmod 600 /etc/caddy/Caddyfile
 
     mv /etc/service/iptables-server /etc/service-disabled/
+    mv /etc/service/waygate-server /etc/service-disabled/
 elif [ "$1" = "join" ]; then
     # server
-    echo "> Joining waygate network"
+    echo "> Joining waygate network as server"
 
     # disable some services
     mv /etc/service/caddy /etc/service-disabled/
@@ -27,10 +28,19 @@ elif [ "$1" = "join" ]; then
     
     waygate join "$2"
 elif [ "$1" = "server" ]; then
-    # server
-    echo "> Starting waygate server"
+    if [ "$2" = "start" ]; then
+        echo "> Starting waygate server"
 
-    waygate server start
+        mv /etc/service/waygate-host /etc/service-disabled/
+    elif [ "$2" = "disconnect" ]; then
+        echo "> Disconnecting waygate server"
+
+        waygate server disconnect
+        exit 0
+    else
+        echo "Invalid command. Use 'start' or 'disconnect'."
+        exit 1
+    fi
 else
     echo "Invalid command. Use 'host' or 'join <TOKEN>'."
     exit 1

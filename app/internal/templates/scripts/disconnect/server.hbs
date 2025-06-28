@@ -1,0 +1,9 @@
+docker stop {{ waygateServerContainerName }} && \
+ docker rm {{ waygateServerContainerName }} && \
+ docker run --rm -i \
+ 	-e DATABASE_PATH=/app/waygate/waygate.db \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v ~/.waygate/{{ waygateVersion }}/server/fs/data:/data \
+	-v ~/.waygate/{{ waygateVersion }}/server/fs/config:/config \
+	-v ~/.waygate/{{ waygateVersion }}/server/fs/app/waygate:/app/waygate \
+ {{ waygateServerContainerImage }} server disconnect
