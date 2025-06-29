@@ -1,0 +1,6 @@
+docker exec {{ waygateHostContainerName }} sh -c 'for svc in /etc/service/*; do sv down "$svc"; done'  && \
+docker exec {{ waygateHostContainerName }} waygate host down && \
+docker exec {{ waygateHostContainerName }} sh -c 'rm -rf /app/waygate/*' && \
+docker stop {{ waygateHostContainerName }} && \
+docker rm {{ waygateHostContainerName }} && \
+docker rmi {{ waygateHostContainerImage }} || true

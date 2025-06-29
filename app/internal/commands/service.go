@@ -28,6 +28,8 @@ import (
 
 type Service struct{}
 
+// host
+
 func (s *Service) HostStatus(creds *ssh.Credentials, stdOut io.Writer) {
 	sshService := ssh.NewService()
 
@@ -121,7 +123,7 @@ func (s *Service) HostStatus(creds *ssh.Credentials, stdOut io.Writer) {
 			fmt.Fprintf(stdOut, "   Details: %s\n", containerStatus)
 		}
 
-		fmt.Fprintf(stdOut, "   💡 Run 'waygate host bootstrap %s@%s:%d' to install and start waygate.\n", creds.Username, creds.Host, creds.Port)
+		fmt.Fprintf(stdOut, "   💡 Run 'waygate host up %s@%s:%d' to install and start waygate host node.\n", creds.Username, creds.Host, creds.Port)
 	}
 	fmt.Fprintf(stdOut, "\n")
 
@@ -145,10 +147,10 @@ func (s *Service) HostStatus(creds *ssh.Credentials, stdOut io.Writer) {
 	fmt.Fprintf(stdOut, "✨ Status check completed successfully!\n")
 }
 
-func (s *Service) HostBootstrap(creds *ssh.Credentials, stdOut io.Writer, errOut io.Writer, nodesRepository *nodes.Repository) {
+func (s *Service) HostUp(creds *ssh.Credentials, stdOut io.Writer, errOut io.Writer, nodesRepository *nodes.Repository) {
 	sshService := ssh.NewService()
 
-	fmt.Fprintf(stdOut, "🚀 waygate Host Bootstrap\n")
+	fmt.Fprintf(stdOut, "🚀 waygate Host Up\n")
 	fmt.Fprintf(stdOut, "==========================\n\n")
 
 	// SSH Connection
@@ -222,6 +224,82 @@ func (s *Service) HostBootstrap(creds *ssh.Credentials, stdOut io.Writer, errOut
 	}
 
 	fmt.Fprintf(stdOut, "✨ Bootstrap process completed!\n")
+}
+
+func (s *Service) HostDown(creds *ssh.Credentials, stdOut io.Writer, errOut io.Writer, nodesRepository *nodes.Repository) {
+	// First, try to determine if we are executing on a host node locally.
+	currentNode, err := nodesRepository.GetCurrentNode()
+
+	if err == nil && currentNode != nil && currentNode.Role == node_types.NodeRoleHost {
+		// Local execution – just detach and remove docker network like in ServerDown
+		err = dockerutils.DetachDockerNetworkFromAllContainers()
+		if err != nil {
+			fmt.Fprintf(errOut, "Error detaching docker network: %v\n", err)
+			return
+		}
+
+		err = dockerutils.RemoveDockerNetwork()
+		if err != nil {
+			fmt.Fprintf(errOut, "Error removing docker network: %v\n", err)
+			return
+		}
+
+		return
+	}
+
+	// Remote execution – credentials are required
+	if creds == nil {
+		fmt.Fprintf(errOut, "Error: SSH credentials are required\n")
+		return
+	}
+
+	sshService := ssh.NewService()
+
+	fmt.Fprintf(stdOut, "🚀 waygate Host Teardown\n")
+	fmt.Fprintf(stdOut, "=========================\n\n")
+
+	// SSH Connection
+	fmt.Fprintf(stdOut, "📡 Connecting to host...\n")
+	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
+
+	err = sshService.Connect(creds)
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	defer sshService.Close()
+	fmt.Fprintf(stdOut, "   Status: ✅ Connected\n\n")
+
+	// Check if host is running
+	isRunning, err := sshService.IsWireportHostContainerRunning()
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	if !isRunning {
+		fmt.Fprintf(stdOut, "   Status: ❌ Not Running\n")
+		fmt.Fprintf(stdOut, "   💡 waygate host is not running\n\n")
+		return
+	}
+
+	// Teardown waygate host
+	fmt.Fprintf(stdOut, "🛑 Teardown waygate host...\n")
+	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
+
+	_, err = sshService.TeardownWireportHost()
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Teardown Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	fmt.Fprintf(stdOut, "   Status: ✅ Teardown Completed\n\n")
+
+	fmt.Fprintf(stdOut, "✨ Host teardown process completed!\n")
 }
 
 func (s *Service) HostUpgrade(creds *ssh.Credentials, stdOut io.Writer, errOut io.Writer, nodesRepository *nodes.Repository) {
@@ -330,6 +408,8 @@ func (s *Service) HostStart(hostPublicIP string, nodesRepository *nodes.Reposito
 		}
 	}
 }
+
+// client
 
 func (s *Service) ClientNew(nodesRepository *nodes.Repository, joinRequestsRepository *joinrequests.Repository, publicServicesRepository *publicservices.Repository,
 	stdOut io.Writer, errOut io.Writer, joinRequestClientCreation bool, quietClientCreation bool, waitClientCreation bool) {
@@ -509,6 +589,66 @@ func (s *Service) ClientNew(nodesRepository *nodes.Repository, joinRequestsRepos
 				fmt.Fprintf(stdOut, "%s\n", *wireguardConfig)
 			}
 		}
+	}
+}
+
+func (s *Service) ClientList(nodesRepository *nodes.Repository, requestFromNodeID *string, stdOut io.Writer, errOut io.Writer) {
+	currentNode, err := nodesRepository.GetCurrentNode()
+
+	if err != nil {
+		fmt.Fprintf(errOut, "Error getting current node: %v\n", err)
+		return
+	}
+
+	switch currentNode.Role {
+	case node_types.NodeRoleClient:
+		// remote execution
+		apiService := APIService{
+			Host:             currentNode.HostPublicIP,
+			Port:             currentNode.HostPublicPort,
+			ClientCertBundle: currentNode.ClientCertBundle,
+		}
+
+		var execResponseDTO commandstypes.ExecResponseDTO
+
+		execResponseDTO, err = apiService.ClientList()
+
+		if err != nil {
+			fmt.Fprintf(errOut, "Failed to list clients: %v\n", err)
+			return
+		}
+
+		if len(execResponseDTO.Stderr) > 0 {
+			fmt.Fprintf(errOut, "%s\n", execResponseDTO.Stderr)
+		}
+
+		fmt.Fprintf(stdOut, "%s\n", execResponseDTO.Stdout)
+
+		return
+	case node_types.NodeRoleHost:
+		// local execution
+		clientNodes, err := nodesRepository.GetNodesByRole(node_types.NodeRoleClient)
+
+		if err != nil {
+			fmt.Fprintf(errOut, "Error getting nodes: %v\n", err)
+			return
+		}
+
+		fmt.Fprintf(stdOut, "ID\tPRIVATE IP\n")
+
+		for _, clientNode := range clientNodes {
+
+			if requestFromNodeID != nil && clientNode.ID == *requestFromNodeID {
+				fmt.Fprintf(stdOut, "%s*\t%s\n", clientNode.ID, clientNode.WGConfig.Interface.Address.String())
+			} else {
+				fmt.Fprintf(stdOut, "%s\t%s\n", clientNode.ID, clientNode.WGConfig.Interface.Address.String())
+			}
+		}
+
+		return
+	default:
+		fmt.Fprintf(errOut, "Error: Current node is not a client or host\n")
+		return
 	}
 }
 
@@ -908,6 +1048,273 @@ func (s *Service) ServerUpgrade(creds *ssh.Credentials, stdOut io.Writer, errOut
 	}
 }
 
+func (s *Service) ServerStatus(creds *ssh.Credentials, stdOut io.Writer) {
+	sshService := ssh.NewService()
+
+	fmt.Fprintf(stdOut, "🔍 Checking waygate Server Status\n")
+	fmt.Fprintf(stdOut, "==================================\n\n")
+
+	// SSH Connection Check
+	fmt.Fprintf(stdOut, "📡 SSH Connection\n")
+	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
+
+	err := sshService.Connect(creds)
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	defer sshService.Close()
+	fmt.Fprintf(stdOut, "   Status: ✅ Connected\n\n")
+
+	// Docker Installation Check
+	fmt.Fprintf(stdOut, "🐳 Docker Installation\n")
+	dockerInstalled, err := sshService.IsDockerInstalled()
+
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	var dockerVersion string
+
+	if dockerInstalled {
+		fmt.Fprintf(stdOut, "   Status: ✅ Installed\n")
+
+		// Get Docker version
+		dockerVersion, err = sshService.GetDockerVersion()
+		if err == nil {
+			fmt.Fprintf(stdOut, "   Version: %s\n", dockerVersion)
+		}
+	} else {
+		fmt.Fprintf(stdOut, "   Status: ❌ Not Installed\n\n")
+		fmt.Fprintf(stdOut, "💡 Install Docker to continue with waygate setup.\n\n")
+		return
+	}
+
+	// Docker Permissions Check
+	fmt.Fprintf(stdOut, "   Permissions: ")
+	dockerAccessible, err := sshService.IsDockerAccessible()
+
+	if err != nil {
+		fmt.Fprintf(stdOut, "❌ Check Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	if dockerAccessible {
+		fmt.Fprintf(stdOut, "✅ User has access\n")
+	} else {
+		fmt.Fprintf(stdOut, "❌ User lacks permissions\n")
+		fmt.Fprintf(stdOut, "💡 Add user to docker group.\n\n")
+		return
+	}
+	fmt.Fprintf(stdOut, "\n")
+
+	// waygate Server Status Check
+	fmt.Fprintf(stdOut, "🚀 waygate Server Status\n")
+	isRunning, err := sshService.IsWireportServerContainerRunning()
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	var containerStatus string
+
+	if isRunning {
+		fmt.Fprintf(stdOut, "   Status: ✅ Running\n")
+
+		// Get detailed container status
+		containerStatus, err = sshService.GetWireportServerContainerStatus()
+		if err == nil && containerStatus != "" {
+			fmt.Fprintf(stdOut, "   Details: %s\n", containerStatus)
+		}
+	} else {
+		fmt.Fprintf(stdOut, "   Status: ❌ Not Running\n")
+
+		// Check if container exists but is stopped
+		containerStatus, err = sshService.GetWireportServerContainerStatus()
+		if err == nil && containerStatus != "" {
+			fmt.Fprintf(stdOut, "   Details: %s\n", containerStatus)
+		}
+
+		fmt.Fprintf(stdOut, "   💡 Run 'waygate server up %s@%s:%d' to install and start waygate server node.\n", creds.Username, creds.Host, creds.Port)
+	}
+	fmt.Fprintf(stdOut, "\n")
+
+	// Docker Network Status Check
+	fmt.Fprintf(stdOut, "🌐 waygate Docker Network\n")
+	networkStatus, err := sshService.GetWireportNetworkStatus()
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	if networkStatus != "" {
+		fmt.Fprintf(stdOut, "   Network: ✅ '%s' exists\n", strings.TrimSpace(networkStatus))
+	} else {
+		fmt.Fprintf(stdOut, "   Network: ❌ %s not found\n", config.Config.DockerNetworkName)
+		fmt.Fprintf(stdOut, "💡 Network will be created when waygate server starts.\n")
+	}
+	fmt.Fprintf(stdOut, "\n")
+
+	fmt.Fprintf(stdOut, "✨ Status check completed successfully!\n")
+}
+
+func (s *Service) ServerUp(nodesRepository *nodes.Repository, joinRequestsRepository *joinrequests.Repository, creds *ssh.Credentials, stdOut io.Writer, errOut io.Writer, dockerSubnet string) {
+	sshService := ssh.NewService()
+
+	fmt.Fprintf(stdOut, "🚀 waygate Server Connect\n")
+	fmt.Fprintf(stdOut, "=========================\n\n")
+
+	// SSH Connection
+	fmt.Fprintf(stdOut, "📡 Connecting to server...\n")
+	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
+
+	err := sshService.Connect(creds)
+
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	defer sshService.Close()
+	fmt.Fprintf(stdOut, "   Status: ✅ Connected\n\n")
+
+	stdOutWriter := bytes.NewBufferString("")
+	errOutWriter := bytes.NewBufferString("")
+
+	s.ServerNew(nodesRepository, joinRequestsRepository, stdOutWriter, errOutWriter, false, true, dockerSubnet)
+
+	if len(errOutWriter.String()) > 0 || len(stdOutWriter.String()) == 0 {
+		fmt.Fprintf(errOut, "%s\n", errOutWriter.String())
+		fmt.Fprintf(stdOut, "%s\n", stdOutWriter.String())
+		fmt.Fprintf(stdOut, "❌ Failed to connect waygate server to the network\n")
+		return
+	}
+
+	serverJoinToken := stdOutWriter.String()
+
+	// Connection
+	fmt.Fprintf(stdOut, "📦 Connecting waygate server to the network...\n")
+	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
+
+	_, err = sshService.InstallWireportServer(serverJoinToken)
+
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Connection Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	fmt.Fprintf(stdOut, "   Status: ✅ Connection Completed\n\n")
+
+	// Verification
+	fmt.Fprintf(stdOut, "✅ Verifying connection...\n")
+	installationConfirmed, err := sshService.IsWireportServerContainerRunning()
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Verification Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	if installationConfirmed {
+		fmt.Fprintf(stdOut, "   Status: ✅ Verified Successfully, Running\n")
+		fmt.Fprintf(stdOut, "   🎉 waygate server has been successfully connected to the network!\n\n")
+	} else {
+		fmt.Fprintf(stdOut, "   Status: ❌ Verification Failed\n")
+		fmt.Fprintf(stdOut, "   💡 waygate server container was not found running after connection.\n\n")
+	}
+
+	fmt.Fprintf(stdOut, "✨ Server connection process completed!\n")
+}
+
+func (s *Service) ServerDown(nodesRepository *nodes.Repository, creds *ssh.Credentials, stdOut io.Writer, errOut io.Writer) {
+	currentNode, err := nodesRepository.GetCurrentNode()
+
+	if err != nil {
+		fmt.Fprintf(errOut, "Error getting current node: %v\n", err)
+		return
+	}
+
+	if currentNode.Role == node_types.NodeRoleServer {
+		err = dockerutils.DetachDockerNetworkFromAllContainers()
+
+		if err != nil {
+			fmt.Fprintf(errOut, "Error detaching docker network: %v\n", err)
+			return
+		}
+
+		err = dockerutils.RemoveDockerNetwork()
+
+		if err != nil {
+			fmt.Fprintf(errOut, "Error removing docker network: %v\n", err)
+			return
+		}
+
+		return
+	}
+
+	if creds == nil {
+		fmt.Fprintf(errOut, "Error: SSH credentials are required\n")
+		return
+	}
+
+	sshService := ssh.NewService()
+
+	fmt.Fprintf(stdOut, "🚀 waygate Server Teardown\n")
+	fmt.Fprintf(stdOut, "==========================\n\n")
+
+	// SSH Connection
+	fmt.Fprintf(stdOut, "📡 Connecting to server...\n")
+	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
+
+	err = sshService.Connect(creds)
+
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	defer sshService.Close()
+	fmt.Fprintf(stdOut, "   Status: ✅ Connected\n\n")
+
+	// Check if server is running
+	isRunning, err := sshService.IsWireportServerContainerRunning()
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	if !isRunning {
+		fmt.Fprintf(stdOut, "   Status: ❌ Not Running\n")
+		fmt.Fprintf(stdOut, "   💡 waygate server is not running\n\n")
+		return
+	}
+
+	// Teardown waygate server
+	fmt.Fprintf(stdOut, "🛑 Teardown waygate server...\n")
+	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
+
+	_, err = sshService.TeardownWireportServer()
+	if err != nil {
+		fmt.Fprintf(stdOut, "   Status: ❌ Teardown Failed\n")
+		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
+		return
+	}
+
+	fmt.Fprintf(stdOut, "   Status: ✅ Teardown Completed\n\n")
+
+	fmt.Fprintf(stdOut, "✨ Server teardown process completed!\n")
+}
+
 func (s *Service) ServicePublish(nodesRepository *nodes.Repository, publicServicesRepository *publicservices.Repository, stdOut io.Writer, errOut io.Writer,
 	localProtocol string, localHost string, localPort uint16, publicProtocol string, publicHost string, publicPort uint16) {
 	err := publicServicesRepository.Save(&publicservices.PublicService{
@@ -1066,331 +1473,4 @@ func (s *Service) ServiceParamList(_ *nodes.Repository, publicServicesRepository
 	}
 
 	fmt.Fprintf(stdOut, "\n")
-}
-
-func (s *Service) ServerStatus(creds *ssh.Credentials, stdOut io.Writer) {
-	sshService := ssh.NewService()
-
-	fmt.Fprintf(stdOut, "🔍 Checking waygate Server Status\n")
-	fmt.Fprintf(stdOut, "==================================\n\n")
-
-	// SSH Connection Check
-	fmt.Fprintf(stdOut, "📡 SSH Connection\n")
-	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
-
-	err := sshService.Connect(creds)
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	defer sshService.Close()
-	fmt.Fprintf(stdOut, "   Status: ✅ Connected\n\n")
-
-	// Docker Installation Check
-	fmt.Fprintf(stdOut, "🐳 Docker Installation\n")
-	dockerInstalled, err := sshService.IsDockerInstalled()
-
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	var dockerVersion string
-
-	if dockerInstalled {
-		fmt.Fprintf(stdOut, "   Status: ✅ Installed\n")
-
-		// Get Docker version
-		dockerVersion, err = sshService.GetDockerVersion()
-		if err == nil {
-			fmt.Fprintf(stdOut, "   Version: %s\n", dockerVersion)
-		}
-	} else {
-		fmt.Fprintf(stdOut, "   Status: ❌ Not Installed\n\n")
-		fmt.Fprintf(stdOut, "💡 Install Docker to continue with waygate setup.\n\n")
-		return
-	}
-
-	// Docker Permissions Check
-	fmt.Fprintf(stdOut, "   Permissions: ")
-	dockerAccessible, err := sshService.IsDockerAccessible()
-
-	if err != nil {
-		fmt.Fprintf(stdOut, "❌ Check Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	if dockerAccessible {
-		fmt.Fprintf(stdOut, "✅ User has access\n")
-	} else {
-		fmt.Fprintf(stdOut, "❌ User lacks permissions\n")
-		fmt.Fprintf(stdOut, "💡 Add user to docker group.\n\n")
-		return
-	}
-	fmt.Fprintf(stdOut, "\n")
-
-	// waygate Server Status Check
-	fmt.Fprintf(stdOut, "🚀 waygate Server Status\n")
-	isRunning, err := sshService.IsWireportServerContainerRunning()
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	var containerStatus string
-
-	if isRunning {
-		fmt.Fprintf(stdOut, "   Status: ✅ Running\n")
-
-		// Get detailed container status
-		containerStatus, err = sshService.GetWireportServerContainerStatus()
-		if err == nil && containerStatus != "" {
-			fmt.Fprintf(stdOut, "   Details: %s\n", containerStatus)
-		}
-	} else {
-		fmt.Fprintf(stdOut, "   Status: ❌ Not Running\n")
-
-		// Check if container exists but is stopped
-		containerStatus, err = sshService.GetWireportServerContainerStatus()
-		if err == nil && containerStatus != "" {
-			fmt.Fprintf(stdOut, "   Details: %s\n", containerStatus)
-		}
-
-		fmt.Fprintf(stdOut, "   💡 Run 'waygate server bootstrap %s@%s:%d' to install and start waygate server.\n", creds.Username, creds.Host, creds.Port)
-	}
-	fmt.Fprintf(stdOut, "\n")
-
-	// Docker Network Status Check
-	fmt.Fprintf(stdOut, "🌐 waygate Docker Network\n")
-	networkStatus, err := sshService.GetWireportNetworkStatus()
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	if networkStatus != "" {
-		fmt.Fprintf(stdOut, "   Network: ✅ '%s' exists\n", strings.TrimSpace(networkStatus))
-	} else {
-		fmt.Fprintf(stdOut, "   Network: ❌ %s not found\n", config.Config.DockerNetworkName)
-		fmt.Fprintf(stdOut, "💡 Network will be created when waygate server starts.\n")
-	}
-	fmt.Fprintf(stdOut, "\n")
-
-	fmt.Fprintf(stdOut, "✨ Status check completed successfully!\n")
-}
-
-func (s *Service) ServerConnect(nodesRepository *nodes.Repository, joinRequestsRepository *joinrequests.Repository, creds *ssh.Credentials, stdOut io.Writer, errOut io.Writer, dockerSubnet string) {
-	sshService := ssh.NewService()
-
-	fmt.Fprintf(stdOut, "🚀 waygate Server Connect\n")
-	fmt.Fprintf(stdOut, "=========================\n\n")
-
-	// SSH Connection
-	fmt.Fprintf(stdOut, "📡 Connecting to server...\n")
-	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
-
-	err := sshService.Connect(creds)
-
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	defer sshService.Close()
-	fmt.Fprintf(stdOut, "   Status: ✅ Connected\n\n")
-
-	stdOutWriter := bytes.NewBufferString("")
-	errOutWriter := bytes.NewBufferString("")
-
-	s.ServerNew(nodesRepository, joinRequestsRepository, stdOutWriter, errOutWriter, false, true, dockerSubnet)
-
-	if len(errOutWriter.String()) > 0 || len(stdOutWriter.String()) == 0 {
-		fmt.Fprintf(errOut, "%s\n", errOutWriter.String())
-		fmt.Fprintf(stdOut, "%s\n", stdOutWriter.String())
-		fmt.Fprintf(stdOut, "❌ Failed to connect waygate server to the network\n")
-		return
-	}
-
-	serverJoinToken := stdOutWriter.String()
-
-	// Connection
-	fmt.Fprintf(stdOut, "📦 Connecting waygate server to the network...\n")
-	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
-
-	_, err = sshService.InstallWireportServer(serverJoinToken)
-
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Connection Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	fmt.Fprintf(stdOut, "   Status: ✅ Connection Completed\n\n")
-
-	// Verification
-	fmt.Fprintf(stdOut, "✅ Verifying connection...\n")
-	installationConfirmed, err := sshService.IsWireportServerContainerRunning()
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Verification Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	if installationConfirmed {
-		fmt.Fprintf(stdOut, "   Status: ✅ Verified Successfully, Running\n")
-		fmt.Fprintf(stdOut, "   🎉 waygate server has been successfully connected to the network!\n\n")
-	} else {
-		fmt.Fprintf(stdOut, "   Status: ❌ Verification Failed\n")
-		fmt.Fprintf(stdOut, "   💡 waygate server container was not found running after connection.\n\n")
-	}
-
-	fmt.Fprintf(stdOut, "✨ Server connection process completed!\n")
-}
-
-func (s *Service) ServerDisconnect(nodesRepository *nodes.Repository, creds *ssh.Credentials, stdOut io.Writer, errOut io.Writer) {
-	currentNode, err := nodesRepository.GetCurrentNode()
-
-	if err != nil {
-		fmt.Fprintf(errOut, "Error getting current node: %v\n", err)
-		return
-	}
-
-	if currentNode.Role == node_types.NodeRoleServer {
-		err = dockerutils.DetachDockerNetworkFromAllContainers()
-
-		if err != nil {
-			fmt.Fprintf(errOut, "Error disconnecting docker network: %v\n", err)
-			return
-		}
-
-		err = dockerutils.RemoveDockerNetwork()
-
-		if err != nil {
-			fmt.Fprintf(errOut, "Error removing docker network: %v\n", err)
-			return
-		}
-
-		return
-	}
-
-	if creds == nil {
-		fmt.Fprintf(errOut, "Error: SSH credentials are required\n")
-		return
-	}
-
-	sshService := ssh.NewService()
-
-	fmt.Fprintf(stdOut, "🚀 waygate Server Disconnect\n")
-	fmt.Fprintf(stdOut, "==========================\n\n")
-
-	// SSH Connection
-	fmt.Fprintf(stdOut, "📡 Connecting to server...\n")
-	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
-
-	err = sshService.Connect(creds)
-
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	defer sshService.Close()
-	fmt.Fprintf(stdOut, "   Status: ✅ Connected\n\n")
-
-	// Check if server is running
-	isRunning, err := sshService.IsWireportServerContainerRunning()
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	if !isRunning {
-		fmt.Fprintf(stdOut, "   Status: ❌ Not Running\n")
-		fmt.Fprintf(stdOut, "   💡 waygate server is not running\n\n")
-		return
-	}
-
-	// Disconnect waygate server
-	fmt.Fprintf(stdOut, "🛑 Disconnecting waygate server...\n")
-	fmt.Fprintf(stdOut, "   Host: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
-
-	_, err = sshService.DisconnectWireportServer()
-	if err != nil {
-		fmt.Fprintf(stdOut, "   Status: ❌ Disconnect Failed\n")
-		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
-		return
-	}
-
-	fmt.Fprintf(stdOut, "   Status: ✅ Disconnected\n\n")
-
-	fmt.Fprintf(stdOut, "✨ Server disconnect process completed!\n")
-}
-
-func (s *Service) ClientList(nodesRepository *nodes.Repository, requestFromNodeID *string, stdOut io.Writer, errOut io.Writer) {
-	currentNode, err := nodesRepository.GetCurrentNode()
-
-	if err != nil {
-		fmt.Fprintf(errOut, "Error getting current node: %v\n", err)
-		return
-	}
-
-	switch currentNode.Role {
-	case node_types.NodeRoleClient:
-		// remote execution
-		apiService := APIService{
-			Host:             currentNode.HostPublicIP,
-			Port:             currentNode.HostPublicPort,
-			ClientCertBundle: currentNode.ClientCertBundle,
-		}
-
-		var execResponseDTO commandstypes.ExecResponseDTO
-
-		execResponseDTO, err = apiService.ClientList()
-
-		if err != nil {
-			fmt.Fprintf(errOut, "Failed to list clients: %v\n", err)
-			return
-		}
-
-		if len(execResponseDTO.Stderr) > 0 {
-			fmt.Fprintf(errOut, "%s\n", execResponseDTO.Stderr)
-		}
-
-		fmt.Fprintf(stdOut, "%s\n", execResponseDTO.Stdout)
-
-		return
-	case node_types.NodeRoleHost:
-		// local execution
-		clientNodes, err := nodesRepository.GetNodesByRole(node_types.NodeRoleClient)
-
-		if err != nil {
-			fmt.Fprintf(errOut, "Error getting nodes: %v\n", err)
-			return
-		}
-
-		fmt.Fprintf(stdOut, "ID\tPRIVATE IP\n")
-
-		for _, clientNode := range clientNodes {
-
-			if requestFromNodeID != nil && clientNode.ID == *requestFromNodeID {
-				fmt.Fprintf(stdOut, "%s*\t%s\n", clientNode.ID, clientNode.WGConfig.Interface.Address.String())
-			} else {
-				fmt.Fprintf(stdOut, "%s\t%s\n", clientNode.ID, clientNode.WGConfig.Interface.Address.String())
-			}
-		}
-
-		return
-	default:
-		fmt.Fprintf(errOut, "Error: Current node is not a client or host\n")
-		return
-	}
 }

@@ -5,8 +5,6 @@ docker run -d -it --privileged --sysctl "net.ipv4.ip_forward=1" --sysctl "net.ip
 	-p 51820:51820/udp -p 80:80/tcp -p 443:443/tcp -p 4060:4060/tcp \
 	-e DATABASE_PATH=/app/waygate/waygate.db \
 	-v /var/run/docker.sock:/var/run/docker.sock \
-	-v ~/.waygate/{{ waygateVersion }}/host/fs/data:/data \
-	-v ~/.waygate/{{ waygateVersion }}/host/fs/config:/config \
-	-v ~/.waygate/{{ waygateVersion }}/host/fs/app/waygate:/app/waygate \
+	-v ~/.waygate/host:/app/waygate \
 	--name {{ waygateHostContainerName }} \
 	{{ waygateHostContainerImage }} host

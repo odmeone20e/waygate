@@ -15,7 +15,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// Service provides SSH functionality for waygate bootstrapping
+// Service provides SSH functionality for waygate host and server nodes
 type Service struct {
 	client *goph.Client
 	creds  *Credentials
@@ -220,7 +220,7 @@ func (s *Service) InstallWireportHost() (bool, *string, error) {
 		return true, nil, nil
 	}
 
-	installCmdTemplate, err := templates.Scripts.ReadFile(config.Config.BootstrapHostScriptTemplatePath)
+	installCmdTemplate, err := templates.Scripts.ReadFile(config.Config.UpHostScriptTemplatePath)
 
 	if err != nil {
 		return false, nil, err
@@ -396,7 +396,7 @@ func (s *Service) InstallWireportServer(serverJoinToken string) (bool, error) {
 	}
 
 	// Install waygate server using the connect script
-	installCmdTemplate, err := templates.Scripts.ReadFile(config.Config.ConnectServerScriptTemplatePath)
+	installCmdTemplate, err := templates.Scripts.ReadFile(config.Config.UpServerScriptTemplatePath)
 
 	if err != nil {
 		return false, err
@@ -432,8 +432,8 @@ func (s *Service) InstallWireportServer(serverJoinToken string) (bool, error) {
 	return true, nil
 }
 
-func (s *Service) DisconnectWireportServer() (bool, error) {
-	stopCmdTemplate, err := templates.Scripts.ReadFile(config.Config.DisconnectServerScriptTemplatePath)
+func (s *Service) TeardownWireportServer() (bool, error) {
+	stopCmdTemplate, err := templates.Scripts.ReadFile(config.Config.DownServerScriptTemplatePath)
 
 	if err != nil {
 		return false, err
@@ -535,6 +535,42 @@ func (s *Service) UpgradeWireportServer() (bool, error) {
 
 	if cmdResult.ExitCode != 0 {
 		return false, fmt.Errorf("failed to upgrade waygate server: %s", cmdResult.Stderr)
+	}
+
+	return true, nil
+}
+
+func (s *Service) TeardownWireportHost() (bool, error) {
+	teardownCmdTemplate, err := templates.Scripts.ReadFile(config.Config.DownHostScriptTemplatePath)
+
+	if err != nil {
+		return false, err
+	}
+
+	tpl, err := raymond.Parse(string(teardownCmdTemplate))
+
+	if err != nil {
+		return false, err
+	}
+
+	teardownCmdStr, err := tpl.Exec(map[string]string{
+		"waygateHostContainerName":  config.Config.WireportHostContainerName,
+		"waygateHostContainerImage": config.Config.WireportHostContainerImage,
+		"waygateVersion":            version.Version,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	cmdResult, err := s.executeCommand(teardownCmdStr)
+
+	if err != nil {
+		return false, err
+	}
+
+	if cmdResult.ExitCode != 0 {
+		return false, fmt.Errorf("failed to teardown waygate host: %s", cmdResult.Stderr)
 	}
 
 	return true, nil
