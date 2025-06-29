@@ -467,3 +467,75 @@ func (s *Service) DisconnectWireportServer() (bool, error) {
 
 	return true, nil
 }
+
+func (s *Service) UpgradeWireportHost() (bool, error) {
+	upgradeCmdTemplate, err := templates.Scripts.ReadFile(config.Config.UpgradeHostScriptTemplatePath)
+
+	if err != nil {
+		return false, err
+	}
+
+	tpl, err := raymond.Parse(string(upgradeCmdTemplate))
+
+	if err != nil {
+		return false, err
+	}
+
+	upgradeCmdStr, err := tpl.Exec(map[string]string{
+		"waygateHostContainerName":  config.Config.WireportHostContainerName,
+		"waygateHostContainerImage": config.Config.WireportHostContainerImage,
+		"waygateVersion":            version.Version,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	cmdResult, err := s.executeCommand(upgradeCmdStr)
+
+	if err != nil {
+		return false, err
+	}
+
+	if cmdResult.ExitCode != 0 {
+		return false, fmt.Errorf("failed to upgrade waygate host: %s", cmdResult.Stderr)
+	}
+
+	return true, nil
+}
+
+func (s *Service) UpgradeWireportServer() (bool, error) {
+	upgradeCmdTemplate, err := templates.Scripts.ReadFile(config.Config.UpgradeServerScriptTemplatePath)
+
+	if err != nil {
+		return false, err
+	}
+
+	tpl, err := raymond.Parse(string(upgradeCmdTemplate))
+
+	if err != nil {
+		return false, err
+	}
+
+	upgradeCmdStr, err := tpl.Exec(map[string]string{
+		"waygateServerContainerName":  config.Config.WireportServerContainerName,
+		"waygateServerContainerImage": config.Config.WireportServerContainerImage,
+		"waygateVersion":              version.Version,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	cmdResult, err := s.executeCommand(upgradeCmdStr)
+
+	if err != nil {
+		return false, err
+	}
+
+	if cmdResult.ExitCode != 0 {
+		return false, fmt.Errorf("failed to upgrade waygate server: %s", cmdResult.Stderr)
+	}
+
+	return true, nil
+}

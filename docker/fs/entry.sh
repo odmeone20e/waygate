@@ -31,7 +31,9 @@ elif [ "$1" = "server" ]; then
     if [ "$2" = "start" ]; then
         echo "> Starting waygate server"
 
+        mv /etc/service/caddy /etc/service-disabled/
         mv /etc/service/waygate-host /etc/service-disabled/
+        mv /etc/service/iptables-host /etc/service-disabled/
     elif [ "$2" = "disconnect" ]; then
         echo "> Disconnecting waygate server"
 

@@ -1,0 +1,11 @@
+docker pull {{ waygateServerContainerImage }} && \
+docker stop {{ waygateServerContainerName }} && \
+docker rm {{ waygateServerContainerName }} && \
+docker run -d --privileged --sysctl "net.ipv4.ip_forward=1" --sysctl "net.ipv4.conf.all.src_valid_mark=1" \
+	-e DATABASE_PATH=/app/waygate/waygate.db \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v ~/.waygate/{{ waygateVersion }}/server/fs/data:/data \
+	-v ~/.waygate/{{ waygateVersion }}/server/fs/config:/config \
+	-v ~/.waygate/{{ waygateVersion }}/server/fs/app/waygate:/app/waygate \
+	--name {{ waygateServerContainerName }} \
+	{{ waygateServerContainerImage }} server start
