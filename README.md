@@ -49,7 +49,7 @@ Get up and running in just **two commands**:
 ## 1. Bring a HOST online
 
 ```bash
-waygate host up ubuntu@<HOST_IP> --ssh-key-path ~/.ssh/id_rsa
+waygate host up ssh-user@<HOST_IP> --ssh-key-path ~/.ssh/id_rsa
 ```
 
 <details>
@@ -112,12 +112,12 @@ Need more? Here are some other useful commands:
 
 | Purpose | Command |
 |---------|---------|
-| Add a workload SERVER | `waygate server up ubuntu@<SERVER_IP>` |
+| Add a workload SERVER | `waygate server up sshuser@<SERVER_IP>` |
 | Remove a public endpoint | `waygate service unpublish -p https://demo.example.com:443` |
 | Adjust headers/timeouts etc. | `waygate service params new -p https://demo.example.com:443 --param-value 'header_up X-Tenant-Hostname {http.request.host}'` |
-| Issue extra WireGuard profiles | `waygate client new` |
+| Create more CLIENTs with access to the WireGuard network | `waygate client new` |
 | Tear down a HOST | `waygate host down <HOST_ID>` |
-| Tear down a SERVER| `waygate server down ubuntu@<SERVER_IP>` |
+| Tear down a SERVER| `waygate server down sshuser@<SERVER_IP>` |
 
 Refer to `waygate --help` or the documentation for the full CLI reference.
 
