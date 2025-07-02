@@ -45,14 +45,75 @@
 
 ## Quick Start
 
-Get up and running in just **two commands**:
+Get up and running in just **two commands** (both executed on the client device - personal laptop/PC):
 
-
-#### 1. Bring a GATEWAY online
+#### 1. Bootstrap a GATEWAY node and dump client WireGuard config to a file
 
 ```bash
-waygate gateway up ssh-user@<GATEWAY_IP> --ssh-key-path ~/.ssh/id_rsa
+waygate gateway up sshuser@140.120.110.10:22
 ```
+
+*(replace SSH username, IP, PORT with the real details of the GATEWAY machine)*
+
+<details>
+<summary>Sample output</summary>
+
+```
+🔒 Enter SSH password:
+🚀 waygate Gateway Up
+==========================
+
+📡 Connecting to gateway...
+   Gateway: sshuser@140.120.110.10:22
+   Status: ✅ Connected
+
+🔍 Checking current status...
+   Status: ❌ Not Running
+   💡 Proceeding with installation...
+
+📦 Installing waygate...
+   Gateway: sshuser@140.120.110.10:22
+   Status: ✅ Installation Completed
+
+✅ Verifying installation...
+   Status: ✅ Verified Successfully, Running
+   🎉 waygate has been successfully installed and started on the gateway!
+
+   🔑 Applying Client Join Token: eyJpZCI6IjMxMGIyYTQz...
+
+# # # # # # # # # # # # # # # # # # # # # # #
+#       waygate config for WireGuard       #
+# # # # # # # # # # # # # # # # # # # # # # #
+
+[Interface]
+Address = 10.0.0.2/24
+PrivateKey = CDCH09W1+x4P+aZ3OIF2dnEhvYOms2RtV2ReIHqa/0I=
+DNS = 10.0.0.1
+
+[Peer]
+PublicKey = AfYB6BMUMYDcIojecg7H5jhnDNzqIf56rXJ74md1Rw4=
+Endpoint = 140.120.110.10:51820
+AllowedIPs = 172.16.0.0/12, 10.0.0.1/24
+PersistentKeepalive = 15
+
+⤵ waygate WireGuard config has been dumped
+
+   ✅ Client Join Token Applied
+
+✨ Bootstrap process completed!
+```
+</details>
+
+<details>
+<summary>Advanced usage scenarios</summary>
+
+Use ssh-key with an empty passphrase and dump the WireGuard config straight to the file:
+
+```bash
+waygate gateway up sshuser@140.120.110.10:22 --ssh-key-path ~/.ssh/id_rsa --ssh-key-pass-empty > ~/path/to/wireguard-config.conf
+```
+
+</details>
 
 <details>
 <summary><strong>Important – firewall and other prerequisites</strong></summary>
@@ -75,7 +136,13 @@ sudo ufw enable
 ```
 
 2) Docker is installed on the target GATEWAY machine
-3) The account used for SSH-ing into the target GATEWAY machine has all the necessary permissions for managing Docker containers, images and networks
+3) The account used for SSH-ing into the target GATEWAY machine has all the necessary permissions for managing Docker containers, images, and networks
+</details>
+
+<details>
+<summary>waygate <strong>DOES NOT</strong> store SSH credentials</summary>
+
+waygate relies on [goph](https://github.com/melbahja/goph) for handling SSH connections and executing commands on the target remote machines. The credentials are **never stored** by waygate and they only stay in the memory of your client device for the time of executing the commands (typically, a few seconds).
 </details>
 
 #### 2. Publish a local service to the Internet
@@ -91,9 +158,9 @@ waygate service publish \
 
 1) For the service to become available over the given public URL, there must be a respective `A`-record in the DNS settings of your domain name provider, pointing to the target **GATEWAY** machine's IP address.
 
-2) After bootstrapping the GATEWAY node with `waygate gateway up ...` command, you should add the respective WireGuard tunnel on your local machine
+2) After bootstrapping the GATEWAY node with the `waygate gateway up ...` command, you should add the respective WireGuard tunnel on your local machine
 
-3) There must be a service running on the GATEWAY and port specified in the `--local` flag provided to the `waygate service publish` command
+3) There must be a service running and accessible at the address specified in the `--local` flag provided to the `waygate service publish` command (this can be on any CLIENT or SERVER node in the waygate-managed WireGuard network)
 
 </details>
 
@@ -108,20 +175,18 @@ waygate service publish \
 
 ---
 
-## Other useful operations
-
-Need more? Here are some other useful commands:
+## Other useful commands
 
 | Purpose | Command |
-|---------|---------|
-| Add a workload SERVER | `waygate server up sshuser@<SERVER_IP>` |
+|:--------|:--------|
 | Remove a public endpoint | `waygate service unpublish -p https://demo.example.com:443` |
-| Adjust headers/timeouts etc. | `waygate service params new -p https://demo.example.com:443 --param-value 'header_up X-Tenant-Hostname {http.request.host}'` |
-| Create more CLIENTs with access to the WireGuard network | `waygate client new` |
-| Tear down a GATEWAY | `waygate gateway down <GATEWAY_IP>` |
-| Tear down a SERVER| `waygate server down sshuser@<SERVER_IP>` |
+| Adjust headers/timeouts | `waygate service params new -p https://demo.example.com:443 --param-value 'header_up X-Tenant-Hostname {http.request.host}'` |
+| Create more CLIENTs | `waygate client new` |
+| Add a workload SERVER | `waygate server up sshuser@140.120.110.10` |
+| Tear down a SERVER | `waygate server down sshuser@140.120.110.10` |
+| Tear down a GATEWAY | `waygate gateway down sshuser@140.120.110.10` |
 
-Refer to `waygate --help` or the documentation for the full CLI reference.
+Refer to `waygate --help` for the full CLI reference.
 
 ## Security Considerations
 
@@ -137,7 +202,7 @@ If you encounter issues:
 2. Verify firewall status & make sure all required ports are open
 3. Check status of the WireGuard network inside the GATEWAY and SERVER waygate containers using `wg show` and other WireGuard commands
 4. Check pingability of private services from inside GATEWAY, SERVER and CLIENT nodes
-5. If a private service is not reachable, make sure the container is running and check its logs; check whether the target container (in case of the SERVER workloads) is attached to `waygate-net` docker network (waygate agent manages this automatically).
+5. If a private service is not reachable, make sure the container is running and check its logs; check whether the target container (in case of the SERVER workloads) is attached to the `waygate-net` Docker network (waygate agent manages this automatically).
 
 ## License
 
