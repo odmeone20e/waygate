@@ -14,13 +14,13 @@ var GatewaySSHKeyPassEmpty = false
 var GatewayCmd = &cobra.Command{
 	Use:   "gateway",
 	Short: "waygate gateway commands",
-	Long:  `Manage waygate gateway node: configure the gateway node and start the waygate gateway node`,
+	Long:  `Manage waygate gateway node lifecycle and configuration.`,
 }
 
 var StartGatewayCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start waygate in gateway mode",
-	Long:  `Start waygate in gateway mode. It will handle network connections and state management.`,
+	Long:  `Start waygate in gateway mode. waygate in gateway mode will handle WireGuard network, server, client and service management. This command is only relevant for gateway nodes.`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		gatewayPublicIP, err := utils.GetPublicIP()
 
@@ -38,16 +38,16 @@ var StartGatewayCmd = &cobra.Command{
 var StatusGatewayCmd = &cobra.Command{
 	Use:   "status [username@hostname[:port]]",
 	Short: "Check waygate gateway node status",
-	Long: `Check the status of waygate gateway node: SSH connection, Docker installation, and waygate status.
+	Long: `Check the status of a waygate gateway node: SSH connection, Docker installation, and waygate status.
 
-If no username@hostname[:port] is provided, the command will use the bootstrapped gateway node.`,
+If no username@hostname[:port] is provided, the command will use the IP address of the bootstrapped gateway node and will prompt user for the SSH credentials.`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// Build credentials from positional argument or flags
 		creds, err := buildSSHCredentials(cmd, args, true, false, GatewaySSHKeyPassEmpty)
 
 		if err != nil {
-			cmd.PrintErrf("Error: %v\n", err)
+			cmd.PrintErrf("❌ Error: %v\n", err)
 			return
 		}
 
@@ -57,8 +57,8 @@ If no username@hostname[:port] is provided, the command will use the bootstrappe
 
 var UpGatewayCmd = &cobra.Command{
 	Use:   "up username@hostname[:port]",
-	Short: "Start waygate gateway node",
-	Long:  `Start waygate gateway node. It will install waygate on the gateway node.`,
+	Short: "Bootstrap waygate gateway node",
+	Long:  `Bootstrap waygate gateway node: install and configure waygate software in gateway mode on it.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		creds, err := buildSSHCredentials(cmd, args, true, true, GatewaySSHKeyPassEmpty)
@@ -74,8 +74,8 @@ var UpGatewayCmd = &cobra.Command{
 
 var DownGatewayCmd = &cobra.Command{
 	Use:   "down [username@hostname[:port]]",
-	Short: "Stop waygate gateway node",
-	Long:  `Stop waygate gateway node. It will stop the waygate gateway node and remove all data from the gateway node.`,
+	Short: "Teardown waygate gateway node",
+	Long:  `Teardown waygate gateway node: stop the waygate gateway software and remove all the data and configuration from the gateway node.`,
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var creds *ssh.Credentials
@@ -97,7 +97,7 @@ var DownGatewayCmd = &cobra.Command{
 var UpgradeGatewayCmd = &cobra.Command{
 	Use:   "upgrade [username@hostname[:port]]",
 	Short: "Upgrade waygate gateway node",
-	Long:  `Upgrade waygate gateway node. It will upgrade the waygate gateway node to the latest version.`,
+	Long:  `Upgrade waygate gateway node to the latest version of the waygate gateway docker image. This command is only relevant for bootstrapped gateway nodes.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		creds, err := buildSSHCredentials(cmd, args, true, false, GatewaySSHKeyPassEmpty)
