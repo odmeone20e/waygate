@@ -54,7 +54,7 @@
 | **Linux (.tar)** | [waygate-linux-amd64.tar](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-linux-amd64.tar) | [waygate-linux-arm64.tar](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-linux-arm64.tar) |
 | **Linux (.deb)** | [waygate-linux-amd64.deb](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-linux-amd64.deb) | [waygate-linux-arm64.deb](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-linux-arm64.deb) |
 | **Linux (.rpm)** | [waygate-linux-amd64.rpm](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-linux-amd64.rpm) | [waygate-linux-arm64.rpm](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-linux-arm64.rpm) |
-| **Windows** | [waygate-windows-amd64.exe](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-windows-amd64.exe) | [waygate-windows-arm64.exe](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-windows-arm64.exe) |
+| **Windows** | [waygate-windows-amd64.zip](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-windows-amd64.zip) | [waygate-windows-arm64.zip](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-windows-arm64.zip) |
 
 Get waygate up and running in just **two commands** (both executed on the client device — personal laptop/PC):
 
