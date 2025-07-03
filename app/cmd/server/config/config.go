@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"waygate/internal/logger"
-	"waygate/version"
 
 	"github.com/joho/godotenv"
 )
@@ -49,7 +48,7 @@ func getDefaultDatabasePath(fallback string) string {
 	if homeDir == "" {
 		return fallback
 	}
-	return filepath.Join(homeDir, ".waygate", version.Version, "waygate.db")
+	return filepath.Join(homeDir, ".waygate", "default", "waygate.db")
 }
 
 type Configuration struct {
