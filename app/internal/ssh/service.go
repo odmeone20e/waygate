@@ -8,7 +8,6 @@ import (
 	"time"
 	"waygate/cmd/server/config"
 	"waygate/internal/templates"
-	"waygate/version"
 
 	"github.com/aymerick/raymond"
 	"github.com/melbahja/goph"
@@ -208,7 +207,7 @@ func (s *Service) GetWireportNetworkStatus() (string, error) {
 	return result.Stdout, nil
 }
 
-func (s *Service) InstallWireportGateway() (bool, *string, error) {
+func (s *Service) InstallWireportGateway(imageTag string) (bool, *string, error) {
 	isRunning, err := s.IsWireportGatewayContainerRunning()
 
 	if err != nil {
@@ -236,8 +235,7 @@ func (s *Service) InstallWireportGateway() (bool, *string, error) {
 
 	installCmdStr, err := tpl.Exec(map[string]string{
 		"waygateGatewayContainerName":  config.Config.WireportGatewayContainerName,
-		"waygateGatewayContainerImage": config.Config.WireportGatewayContainerImage,
-		"waygateVersion":               version.Version,
+		"waygateGatewayContainerImage": fmt.Sprintf("%s:%s", config.Config.WireportGatewayContainerImage, imageTag),
 	})
 
 	if err != nil {
@@ -383,7 +381,7 @@ func (s *Service) GetWireportServerContainerStatus() (string, error) {
 	return result.Stdout, nil
 }
 
-func (s *Service) InstallWireportServer(serverJoinToken string) (bool, error) {
+func (s *Service) InstallWireportServer(serverJoinToken string, imageTag string) (bool, error) {
 	isRunning, err := s.IsWireportServerContainerRunning()
 
 	if err != nil {
@@ -410,8 +408,7 @@ func (s *Service) InstallWireportServer(serverJoinToken string) (bool, error) {
 
 	installCmdStr, err := tpl.Exec(map[string]string{
 		"waygateServerContainerName":  config.Config.WireportServerContainerName,
-		"waygateServerContainerImage": config.Config.WireportServerContainerImage,
-		"waygateVersion":              version.Version,
+		"waygateServerContainerImage": fmt.Sprintf("%s:%s", config.Config.WireportServerContainerImage, imageTag),
 		"serverJoinToken":              serverJoinToken,
 	})
 
@@ -448,7 +445,6 @@ func (s *Service) TeardownWireportServer() (bool, error) {
 	stopCmdStr, err := tpl.Exec(map[string]string{
 		"waygateServerContainerName":  config.Config.WireportServerContainerName,
 		"waygateServerContainerImage": config.Config.WireportServerContainerImage,
-		"waygateVersion":              version.Version,
 	})
 
 	if err != nil {
@@ -468,7 +464,7 @@ func (s *Service) TeardownWireportServer() (bool, error) {
 	return true, nil
 }
 
-func (s *Service) UpgradeWireportGateway() (bool, error) {
+func (s *Service) UpgradeWireportGateway(imageTag string) (bool, error) {
 	upgradeCmdTemplate, err := templates.Scripts.ReadFile(config.Config.UpgradeGatewayScriptTemplatePath)
 
 	if err != nil {
@@ -483,8 +479,7 @@ func (s *Service) UpgradeWireportGateway() (bool, error) {
 
 	upgradeCmdStr, err := tpl.Exec(map[string]string{
 		"waygateGatewayContainerName":  config.Config.WireportGatewayContainerName,
-		"waygateGatewayContainerImage": config.Config.WireportGatewayContainerImage,
-		"waygateVersion":               version.Version,
+		"waygateGatewayContainerImage": fmt.Sprintf("%s:%s", config.Config.WireportGatewayContainerImage, imageTag),
 	})
 
 	if err != nil {
@@ -504,7 +499,7 @@ func (s *Service) UpgradeWireportGateway() (bool, error) {
 	return true, nil
 }
 
-func (s *Service) UpgradeWireportServer() (bool, error) {
+func (s *Service) UpgradeWireportServer(imageTag string) (bool, error) {
 	upgradeCmdTemplate, err := templates.Scripts.ReadFile(config.Config.UpgradeServerScriptTemplatePath)
 
 	if err != nil {
@@ -519,8 +514,7 @@ func (s *Service) UpgradeWireportServer() (bool, error) {
 
 	upgradeCmdStr, err := tpl.Exec(map[string]string{
 		"waygateServerContainerName":  config.Config.WireportServerContainerName,
-		"waygateServerContainerImage": config.Config.WireportServerContainerImage,
-		"waygateVersion":              version.Version,
+		"waygateServerContainerImage": fmt.Sprintf("%s:%s", config.Config.WireportServerContainerImage, imageTag),
 	})
 
 	if err != nil {
@@ -556,7 +550,6 @@ func (s *Service) TeardownWireportGateway() (bool, error) {
 	teardownCmdStr, err := tpl.Exec(map[string]string{
 		"waygateGatewayContainerName":  config.Config.WireportGatewayContainerName,
 		"waygateGatewayContainerImage": config.Config.WireportGatewayContainerImage,
-		"waygateVersion":               version.Version,
 	})
 
 	if err != nil {
