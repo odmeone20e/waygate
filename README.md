@@ -57,6 +57,15 @@ brew install MultionLabs/waygate/waygate
 
 or
 
+**via scoop (Windows)**
+
+```bash
+scoop bucket add waygate https://github.com/MultionLabs/scoop-waygate
+scoop install waygate
+```
+
+or
+
 **from binaries**
 
 <details>
