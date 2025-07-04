@@ -1,5 +1,5 @@
 docker exec {{ waygateGatewayContainerName }} sh -c 'for svc in /etc/service/*; do sv down "$svc"; done'  && \
-docker exec {{ waygateGatewayContainerName }} waygate gateway down && \
+docker exec {{ waygateGatewayContainerName }} waygate gateway down -f && \
 docker exec {{ waygateGatewayContainerName }} sh -c 'rm -rf /app/waygate/*' && \
 docker stop {{ waygateGatewayContainerName }} && \
 docker rm {{ waygateGatewayContainerName }} && \

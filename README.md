@@ -29,9 +29,9 @@
 ## Features
 
 - SSL/TLS termination with **100% free and automated certificate provisioning and renewal**
-- **Reverse proxy** with support of HTTP(S) and TCP/UDP (Layer-4) (Caddy)
+- **Reverse proxy** with support for HTTP(S) and TCP/UDP (Layer-4) (Caddy)
 - **Secure VPN tunneling** (WireGuard)
-- Automatic **service discovery and hostname resolution -- by Docker container names** (CoreDNS)
+- Automatic **service discovery and hostname resolution by Docker container names** (CoreDNS)
 - **Multiplatform CLI** (Linux, macOS, Windows — ARM64 & AMD64) for [**quick and easy setup**](#quick-start)
 - **Self-hosted** and **open-source**
 - **High performance** with a **low memory footprint**
@@ -46,7 +46,21 @@
 
 ## Quick Start
 
-#### 0. Install suitable version of `waygate` cli on your device:
+#### 0. Install `waygate` CLI on your device:
+
+
+**via Homebrew (macOS, Linux)**
+
+```bash
+brew install MultionLabs/waygate/waygate
+```
+
+or
+
+**from binaries**
+
+<details>
+<summary>Links to binaries (Linux, macOS, Windows)</summary>
 
 | Platform | AMD64 | ARM64 |
 |:---------|:------|:------|
@@ -57,9 +71,63 @@
 | **Linux (.rpm)** | [waygate-linux-amd64.rpm](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-linux-amd64.rpm) | [waygate-linux-arm64.rpm](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-linux-arm64.rpm) |
 | **Windows** | [waygate-windows-amd64.zip](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-windows-amd64.zip) | [waygate-windows-arm64.zip](https://github.com/MultionLabs/waygate/releases/latest/download/waygate-windows-arm64.zip) |
 
-Get waygate up and running in just **two commands** (both executed on the client device — personal laptop/PC):
 
-#### 1. Bootstrap a GATEWAY node and dump client WireGuard config to a file
+### ⚠️ Running Unsigned Binaries on macOS and Windows
+
+Since the binaries are **not signed with commercial certificates**, your operating system may prevent them from launching by default.  
+You will need to manually allow them.
+
+---
+
+### 🪟 On Windows
+
+When you try to launch the program, you may see a warning similar to:
+
+> **Windows protected your PC**  
+> Windows Defender SmartScreen prevented an unrecognized app from starting.
+
+To proceed:
+
+1. Click **More info**.
+2. Click **Run anyway**.
+
+This will start the application despite the warning.
+
+---
+
+### 🍎 On macOS
+
+When you attempt to open the app or installer, you may see:
+
+> "**waygate** cannot be opened because the developer cannot be verified."
+
+To allow it:
+
+1. Open **Finder** and locate the application or `.pkg` file.
+2. **Right-click** (or Control-click) the file and select **Open**.
+3. You will see a similar warning, but this time it includes an **Open** button.
+4. Click **Open** to confirm you trust the file.
+
+Alternatively, you can allow the app through **System Preferences**:
+
+1. Open **Apple Menu > System Preferences > Security & Privacy > General**.
+2. You will see a message that the app was blocked.
+3. Click **Allow Anyway**.
+4. Then, try opening the app again.
+
+---
+
+**Note:**
+- These steps are necessary **only once per file**.
+- If you have any concerns about file integrity, consider [verifying checksums](https://github.com/MultionLabs/waygate/releases) or building binaries from the source code yourself.
+- In enterprise environments, administrators can whitelist the binaries using Group Policy (Windows) or Gatekeeper settings (macOS).
+
+</details>
+
+
+Then, publish your first local service to the Internet **in a few commands** (both executed on the client device — personal laptop/PC):
+
+#### 1. Bootstrap a GATEWAY node
 
 ```bash
 waygate gateway up sshuser@140.120.110.10:22
@@ -184,7 +252,7 @@ This command supports different protocols (HTTP, HTTPS, TCP, UDP) and automatica
 
 3) There must be a service running and accessible at the address specified in the `--local` flag provided to the `waygate service publish` command (this can be on any CLIENT or SERVER node in the waygate-managed WireGuard network)
 
-4) The following ports are available for exposure on the GATEWAY machine (public url of the exposed service): 80, 443
+4) The following ports are available for exposure on the GATEWAY machine (public URL of the exposed service): 80, 443
 
 </details>
 
