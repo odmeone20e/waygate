@@ -43,18 +43,20 @@ func getHomeDir() string {
 	return homeDir
 }
 
-func getDefaultDatabasePath(fallback string) string {
+func getDefaultDatabasePath(fallback string, profile string) string {
 	homeDir := getHomeDir()
 	if homeDir == "" {
 		return fallback
 	}
-	return filepath.Join(homeDir, ".waygate", "default", "waygate.db")
+	return filepath.Join(homeDir, ".waygate", profile, "waygate.db")
 }
 
 type Configuration struct {
 	ControlServerPort uint16
 	DatabasePath      string
 	WGPublicPort      uint16
+
+	WireportProfile string
 
 	WireguardConfigPath string
 	ResolvConfigPath    string
@@ -88,12 +90,15 @@ type Configuration struct {
 	CertExpiry time.Duration
 }
 
-var DatabasePath = GetEnv("DATABASE_PATH", getDefaultDatabasePath("/app/waygate/waygate.db"))
+var WireportProfile = GetEnv("WIREPORT_PROFILE", "default")
+var DatabasePath = GetEnv("DATABASE_PATH", getDefaultDatabasePath("/app/waygate/waygate.db", WireportProfile))
 
 var Config = &Configuration{
 	ControlServerPort: 4060,
 	DatabasePath:      DatabasePath,
 	WGPublicPort:      51820,
+
+	WireportProfile: WireportProfile,
 
 	ResolvConfigPath:    GetEnv("RESOLV_CONFIG_PATH", "/etc/resolv.conf"),
 	WireguardConfigPath: GetEnv("WIREGUARD_CONFIG_PATH", "/etc/wireguard/wg0.conf"),
