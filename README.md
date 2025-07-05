@@ -47,6 +47,7 @@
 - **Multiplatform CLI** (Linux, macOS, Windows — ARM64 & AMD64) for [**quick and easy setup**](#quick-start)
 - **Self-hosted** and **open-source**
 - **High performance** with a **low memory footprint**
+- **No need to manually edit countless configuration files**: [quick and easy start](#quick-start) from the command line in just **two commands**
 
 ## Key Concepts
 
@@ -58,9 +59,9 @@
 |:--:|
 | *waygate - ingress proxy and VPN tunnel* |
 
-| ![waygate - docker service discovery by container name](assets/waygate-docker-service-discovery.png) |
+| ![waygate - docker service discovery & hostname resolution by container name](assets/waygate-docker-service-discovery.png) |
 |:--:|
-| *waygate - docker service discovery by container name* |
+| *waygate - docker service discovery & hostname resolution by container name* |
 
 ## Installation
 
