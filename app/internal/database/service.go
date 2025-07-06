@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"waygate/cmd/server/config"
 	join_requests_types "waygate/internal/joinrequests/types"
+	"waygate/internal/jointokens"
 	"waygate/internal/nodes/types"
 	"waygate/internal/publicservices"
 
@@ -31,7 +32,7 @@ func InitDB() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&types.Node{}, &join_requests_types.JoinRequest{}, &publicservices.PublicService{})
+	err = db.AutoMigrate(&types.Node{}, &join_requests_types.JoinRequest{}, &publicservices.PublicService{}, &jointokens.JoinToken{})
 
 	if err != nil {
 		return nil, err

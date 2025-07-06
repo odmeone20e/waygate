@@ -26,7 +26,7 @@ elif [ "$1" = "join" ]; then
     mv /etc/service/waygate-gateway /etc/service-disabled/
     mv /etc/service/iptables-gateway /etc/service-disabled/
     
-    waygate join "$2"
+    waygate join "$2" --postponed
 elif [ "$1" = "server" ]; then
     if [ "$2" = "start" ]; then
         echo "> Starting waygate server"

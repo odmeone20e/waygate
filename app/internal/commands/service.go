@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 	commandstypes "waygate/internal/commands/types"
 	"waygate/internal/joinrequests"
+	"waygate/internal/jointokens"
 	"waygate/internal/nodes"
 	"waygate/internal/nodes/types"
 	"waygate/internal/publicservices"
@@ -268,6 +270,61 @@ func (s *Service) ServerStart(stdOut io.Writer, errOut io.Writer) {
 		stdOut,
 		errOut,
 		[]RoleGroup{
+			{
+				Roles: []types.NodeRole{types.NodeRoleEmpty},
+				Handler: func(_ *types.Node, _ *APICommandsService, local *LocalCommandsService) (*commandstypes.ExecResponseDTO, error) {
+					// try using a join token to create a new server node
+					fmt.Fprintf(stdOut, "Attempting to join waygate network using a stored join token\n")
+
+					var joinToken *jointokens.JoinToken
+					joinToken, err := local.JoinTokensRepository.GetLast()
+
+					if err != nil {
+						return nil, fmt.Errorf("failed to get last join token: %v", err)
+					}
+
+					success := local.Join(stdOut, errOut, joinToken.Token)
+
+					if !success {
+						fmt.Fprintf(errOut, "%s\n", strings.Repeat("=", 80))
+						fmt.Fprintf(errOut, "Failed to start server using join token. Please make sure:\n")
+						fmt.Fprintf(errOut, "- The join token is valid\n")
+						fmt.Fprintf(errOut, "- The gateway node is running and is accessible on it's public IP\n")
+						fmt.Fprintf(errOut, "- Firewall rules on the gateway node are configured correctly (especially on debian, ubuntu and other systems with ufw firewall)\n")
+						fmt.Fprintf(errOut, "-- Especially, when using the same node for both gateway and server\n")
+						fmt.Fprintf(errOut, "\n")
+						fmt.Fprintf(errOut, "Try fixing the availability of the gateway node or the firewall rules and check the logs again - server will try to join again in a few seconds\n")
+						fmt.Fprintf(errOut, "To retry with a new join token, teardown the server node ('waygate server down ...') and bootstrap it again ('waygate server up ...')\n")
+						fmt.Fprintf(errOut, "The app will exit in a few seconds.\n")
+						fmt.Fprintf(errOut, "%s\n", strings.Repeat("=", 80))
+						time.Sleep(time.Second * 5)
+						return nil, fmt.Errorf("failed to start server using join token")
+					}
+
+					err = local.JoinTokensRepository.DeleteAll()
+
+					if err != nil {
+						return nil, fmt.Errorf("failed to clean up join tokens: %v", err)
+					}
+
+					currentNode, err := local.NodesRepository.GetCurrentNode()
+
+					if err != nil {
+						return nil, fmt.Errorf("failed to get current node after joining waygate network: %v", err)
+					}
+
+					if currentNode == nil {
+						return nil, fmt.Errorf("failed to get current node after joining waygate network")
+					}
+
+					fmt.Fprintf(stdOut, "Server node joined waygate network successfully\n")
+
+					// start server
+					s.ServerStart(stdOut, errOut)
+
+					return nil, nil
+				},
+			},
 			{
 				Roles: []types.NodeRole{types.NodeRoleServer},
 				Handler: func(_ *types.Node, _ *APICommandsService, local *LocalCommandsService) (*commandstypes.ExecResponseDTO, error) {
