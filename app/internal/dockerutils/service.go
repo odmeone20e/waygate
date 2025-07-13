@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"waygate/cmd/server/config"
 	"waygate/internal/logger"
@@ -157,11 +158,11 @@ func EnsureDockerNetworkIsAttachedToAllContainers() error {
 	}
 
 	for _, container := range containers {
-		// Skip waygate-gateway container (should not be connected to the network)
-		for _, name := range container.Names {
-			if name == fmt.Sprintf("/%s", config.Config.WireportGatewayContainerName) {
-				continue
-			}
+		isGateway := slices.Contains(container.Names, fmt.Sprintf("/%s", config.Config.WireportGatewayContainerName))
+
+		if isGateway {
+			// Skip waygate-gateway container (should not be connected to the network)
+			continue
 		}
 
 		// Skip containers that are already connected to the target network to avoid conflicts
