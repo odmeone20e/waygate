@@ -1,3 +1,5 @@
 #!/bin/sh
 
+echo "> Stopping waygate-server service"
+
 pkill -TERM waygate
