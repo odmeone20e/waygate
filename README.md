@@ -57,13 +57,10 @@
 - **CLIENT** – any number of laptops/PCs that will connect to the WireGuard network to manage the ingress network and expose services from their local machines to the Internet.
 - **SERVER** *(optional)* – one or more Linux-based machines (with Docker) that run the workloads you want to expose. These nodes join the same private WireGuard network, provided by the GATEWAY.
 
-| ![waygate - ingress proxy and VPN tunnel](assets/waygate-ingress-proxy-vpn-tunnel.png) |
-|:--:|
-| *waygate - ingress proxy and VPN tunnel* |
-
-| ![waygate - docker service discovery & hostname resolution by container name](assets/waygate-docker-service-discovery.png) |
-|:--:|
-| *waygate - docker service discovery & hostname resolution by container name* |
+<div style="display: flex; gap: 16px; justify-content: center;">
+  <img src="assets/waygate-ingress-proxy-vpn-tunnel.png" alt="Ingress Proxy and VPN Tunnel" width="350"/>
+  <img src="assets/waygate-docker-service-discovery.png" alt="Docker Service Discovery" width="350"/>
+</div>
 
 ## Preparation
 
