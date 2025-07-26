@@ -51,6 +51,10 @@
 - **High performance** with a **low memory footprint**
 - [Quick and easy start](#quick-start) in self-hosted mode in just **two commands** - no tinkering with docker/compose files
 
+| ![Ingress Proxy](assets/waygate-ingress-proxy-screenshot.png) | ![Hostname Resolution](assets/waygate-hostname-resolution-screenshot.png) |
+|:--:|:--:|
+| *Ingress proxy with free, automated SSL certificate provisioning and renewal* | *Hostname resolution (hostname = docker container name)* |
+
 ## Key Concepts
 
 - **GATEWAY** – a Linux-based machine with Docker installed, a public IP address, and the following open ports: 80/tcp, 443/tcp, 4060/tcp, 51820/udp and 32420-32421/tcp+udp. This node acts as the ingress gateway and an entry point to your published services.
@@ -408,7 +412,7 @@ When you run `waygate gateway up`, the following happens:
    - waygate control plane API (port 4060/tcp; secure communication with TLS-encryption and mTLS-based auth)
 4. **Network Setup**: Creates a private WireGuard network (10.0.0.0/24)
 5. **Certificate Generation**: Creates client certificates for secure API communication and mTLS
-6. **Configuration Storage**: Stores all configuration in `~/.waygate-docker/gateway` on the gateway machine
+6. **Configuration Storage**: Stores all configuration in `~/.waygate-docker/gateway` on the gateway machineVaasankatu 9, Helsinki, Uusimaa 00500, Finland
 
 ### Server Bootstrapping
 
