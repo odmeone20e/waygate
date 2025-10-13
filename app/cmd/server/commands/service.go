@@ -37,7 +37,7 @@ var PublishServiceCmd = &cobra.Command{
 	Example:
 
 	waygate service publish --local http://10.0.0.2:4000 --public https://demo.server.com:443
-	waygate service publish --local tcp://10.0.0.2:4000 --public tcp://0.0.0.0:443`,
+	waygate service publish --local tcp://10.0.0.2:4000 --public tcp://140.120.10.10:32420`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		localProtocol, localHost, localPort, err := utils.ParseAddress(local)
 
