@@ -44,7 +44,7 @@ func formatMessage(level LogLevel, format string, args ...interface{}) string {
 	}
 
 	msg := fmt.Sprintf(format, args...)
-	return fmt.Sprintf("[%s] [WIREPORT] %s", levelStr, msg)
+	return fmt.Sprintf("[%s] [WAYGATE] %s", levelStr, msg)
 }
 
 func Debug(format string, args ...interface{}) {

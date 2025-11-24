@@ -14,7 +14,7 @@ var (
 
 // Command execution errors
 var (
-	ErrFailedToCheckWireportInstallation      = errors.New("failed to check waygate installation")
+	ErrFailedToCheckWaygateInstallation      = errors.New("failed to check waygate installation")
 	ErrFailedToCheckInstallationPermissions   = errors.New("failed to check installation permissions")
 	ErrInsufficientPermissionsForInstallation = errors.New("insufficient permissions for installation")
 	ErrUnsupportedInstallationMethod          = errors.New("unsupported installation method")

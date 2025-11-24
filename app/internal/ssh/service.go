@@ -183,8 +183,8 @@ func (s *Service) GetDockerVersion() (string, error) {
 	return result.Stdout, nil
 }
 
-func (s *Service) GetWireportContainerStatus() (string, error) {
-	checkContainerCmd := fmt.Sprintf("docker ps -a --filter name=^/%s$ --format '{{.Status}}'", config.Config.WireportGatewayContainerName)
+func (s *Service) GetWaygateContainerStatus() (string, error) {
+	checkContainerCmd := fmt.Sprintf("docker ps -a --filter name=^/%s$ --format '{{.Status}}'", config.Config.WaygateGatewayContainerName)
 	result, err := s.executeCommand(checkContainerCmd)
 	if err != nil {
 		return "", err
@@ -195,7 +195,7 @@ func (s *Service) GetWireportContainerStatus() (string, error) {
 	return result.Stdout, nil
 }
 
-func (s *Service) GetWireportNetworkStatus() (string, error) {
+func (s *Service) GetWaygateNetworkStatus() (string, error) {
 	checkNetworkCmd := fmt.Sprintf("docker network ls --filter name=^%s$ --format '{{.Name}}'", config.Config.DockerNetworkName)
 	result, err := s.executeCommand(checkNetworkCmd)
 	if err != nil {
@@ -207,8 +207,8 @@ func (s *Service) GetWireportNetworkStatus() (string, error) {
 	return result.Stdout, nil
 }
 
-func (s *Service) InstallWireportGateway(image string, imageTag string) (bool, *string, error) {
-	isRunning, err := s.IsWireportGatewayContainerRunning()
+func (s *Service) InstallWaygateGateway(image string, imageTag string) (bool, *string, error) {
+	isRunning, err := s.IsWaygateGatewayContainerRunning()
 
 	if err != nil {
 		return false, nil, err
@@ -234,7 +234,7 @@ func (s *Service) InstallWireportGateway(image string, imageTag string) (bool, *
 	// 1. install and start waygate
 
 	installCmdStr, err := tpl.Exec(map[string]string{
-		"waygateGatewayContainerName":  config.Config.WireportGatewayContainerName,
+		"waygateGatewayContainerName":  config.Config.WaygateGatewayContainerName,
 		"waygateGatewayContainerImage": fmt.Sprintf("%s:%s", image, imageTag),
 	})
 
@@ -277,7 +277,7 @@ func (s *Service) createClientJoinToken() (*string, error) {
 	}
 
 	createClientCmdStr, err := tpl.Exec(map[string]string{
-		"waygateGatewayContainerName": config.Config.WireportGatewayContainerName,
+		"waygateGatewayContainerName": config.Config.WaygateGatewayContainerName,
 	})
 
 	if err != nil {
@@ -299,7 +299,7 @@ func (s *Service) createClientJoinToken() (*string, error) {
 	return &clientJoinToken, nil
 }
 
-func (s *Service) IsWireportGatewayContainerRunning() (bool, error) {
+func (s *Service) IsWaygateGatewayContainerRunning() (bool, error) {
 	dockerInstalled, err := s.IsDockerInstalled()
 
 	if err != nil {
@@ -320,7 +320,7 @@ func (s *Service) IsWireportGatewayContainerRunning() (bool, error) {
 		return false, nil
 	}
 
-	checkContainerCmd := fmt.Sprintf("docker ps --filter name=^/%s$ --format '{{.Names}}'", config.Config.WireportGatewayContainerName)
+	checkContainerCmd := fmt.Sprintf("docker ps --filter name=^/%s$ --format '{{.Names}}'", config.Config.WaygateGatewayContainerName)
 	result, err := s.executeCommand(checkContainerCmd)
 
 	if err != nil {
@@ -334,7 +334,7 @@ func (s *Service) IsWireportGatewayContainerRunning() (bool, error) {
 	return true, nil
 }
 
-func (s *Service) IsWireportServerContainerRunning() (bool, error) {
+func (s *Service) IsWaygateServerContainerRunning() (bool, error) {
 	dockerInstalled, err := s.IsDockerInstalled()
 
 	if err != nil {
@@ -355,7 +355,7 @@ func (s *Service) IsWireportServerContainerRunning() (bool, error) {
 		return false, nil
 	}
 
-	checkContainerCmd := fmt.Sprintf("docker ps --filter name=^/%s$ --format '{{.Names}}'", config.Config.WireportServerContainerName)
+	checkContainerCmd := fmt.Sprintf("docker ps --filter name=^/%s$ --format '{{.Names}}'", config.Config.WaygateServerContainerName)
 	result, err := s.executeCommand(checkContainerCmd)
 
 	if err != nil {
@@ -369,8 +369,8 @@ func (s *Service) IsWireportServerContainerRunning() (bool, error) {
 	return true, nil
 }
 
-func (s *Service) GetWireportServerContainerStatus() (string, error) {
-	checkContainerCmd := fmt.Sprintf("docker ps -a --filter name=^/%s$ --format '{{.Status}}'", config.Config.WireportServerContainerName)
+func (s *Service) GetWaygateServerContainerStatus() (string, error) {
+	checkContainerCmd := fmt.Sprintf("docker ps -a --filter name=^/%s$ --format '{{.Status}}'", config.Config.WaygateServerContainerName)
 	result, err := s.executeCommand(checkContainerCmd)
 	if err != nil {
 		return "", err
@@ -381,8 +381,8 @@ func (s *Service) GetWireportServerContainerStatus() (string, error) {
 	return result.Stdout, nil
 }
 
-func (s *Service) InstallWireportServer(serverJoinToken string, image string, imageTag string) (bool, error) {
-	isRunning, err := s.IsWireportServerContainerRunning()
+func (s *Service) InstallWaygateServer(serverJoinToken string, image string, imageTag string) (bool, error) {
+	isRunning, err := s.IsWaygateServerContainerRunning()
 
 	if err != nil {
 		return false, err
@@ -407,7 +407,7 @@ func (s *Service) InstallWireportServer(serverJoinToken string, image string, im
 	}
 
 	installCmdStr, err := tpl.Exec(map[string]string{
-		"waygateServerContainerName":  config.Config.WireportServerContainerName,
+		"waygateServerContainerName":  config.Config.WaygateServerContainerName,
 		"waygateServerContainerImage": fmt.Sprintf("%s:%s", image, imageTag),
 		"serverJoinToken":              serverJoinToken,
 	})
@@ -429,7 +429,7 @@ func (s *Service) InstallWireportServer(serverJoinToken string, image string, im
 	return true, nil
 }
 
-func (s *Service) TeardownWireportServer() (bool, error) {
+func (s *Service) TeardownWaygateServer() (bool, error) {
 	stopCmdTemplate, err := templates.Scripts.ReadFile(config.Config.DownServerScriptTemplatePath)
 
 	if err != nil {
@@ -443,8 +443,8 @@ func (s *Service) TeardownWireportServer() (bool, error) {
 	}
 
 	stopCmdStr, err := tpl.Exec(map[string]string{
-		"waygateServerContainerName":  config.Config.WireportServerContainerName,
-		"waygateServerContainerImage": config.Config.WireportServerContainerImage,
+		"waygateServerContainerName":  config.Config.WaygateServerContainerName,
+		"waygateServerContainerImage": config.Config.WaygateServerContainerImage,
 	})
 
 	if err != nil {
@@ -464,7 +464,7 @@ func (s *Service) TeardownWireportServer() (bool, error) {
 	return true, nil
 }
 
-func (s *Service) UpgradeWireportGateway(image string, imageTag string) (bool, error) {
+func (s *Service) UpgradeWaygateGateway(image string, imageTag string) (bool, error) {
 	upgradeCmdTemplate, err := templates.Scripts.ReadFile(config.Config.UpgradeGatewayScriptTemplatePath)
 
 	if err != nil {
@@ -478,7 +478,7 @@ func (s *Service) UpgradeWireportGateway(image string, imageTag string) (bool, e
 	}
 
 	upgradeCmdStr, err := tpl.Exec(map[string]string{
-		"waygateGatewayContainerName":  config.Config.WireportGatewayContainerName,
+		"waygateGatewayContainerName":  config.Config.WaygateGatewayContainerName,
 		"waygateGatewayContainerImage": fmt.Sprintf("%s:%s", image, imageTag),
 	})
 
@@ -499,7 +499,7 @@ func (s *Service) UpgradeWireportGateway(image string, imageTag string) (bool, e
 	return true, nil
 }
 
-func (s *Service) UpgradeWireportServer(image string, imageTag string) (bool, error) {
+func (s *Service) UpgradeWaygateServer(image string, imageTag string) (bool, error) {
 	upgradeCmdTemplate, err := templates.Scripts.ReadFile(config.Config.UpgradeServerScriptTemplatePath)
 
 	if err != nil {
@@ -513,7 +513,7 @@ func (s *Service) UpgradeWireportServer(image string, imageTag string) (bool, er
 	}
 
 	upgradeCmdStr, err := tpl.Exec(map[string]string{
-		"waygateServerContainerName":  config.Config.WireportServerContainerName,
+		"waygateServerContainerName":  config.Config.WaygateServerContainerName,
 		"waygateServerContainerImage": fmt.Sprintf("%s:%s", image, imageTag),
 	})
 
@@ -534,7 +534,7 @@ func (s *Service) UpgradeWireportServer(image string, imageTag string) (bool, er
 	return true, nil
 }
 
-func (s *Service) TeardownWireportGateway() (bool, error) {
+func (s *Service) TeardownWaygateGateway() (bool, error) {
 	teardownCmdTemplate, err := templates.Scripts.ReadFile(config.Config.DownGatewayScriptTemplatePath)
 
 	if err != nil {
@@ -548,8 +548,8 @@ func (s *Service) TeardownWireportGateway() (bool, error) {
 	}
 
 	teardownCmdStr, err := tpl.Exec(map[string]string{
-		"waygateGatewayContainerName":  config.Config.WireportGatewayContainerName,
-		"waygateGatewayContainerImage": config.Config.WireportGatewayContainerImage,
+		"waygateGatewayContainerName":  config.Config.WaygateGatewayContainerName,
+		"waygateGatewayContainerImage": config.Config.WaygateGatewayContainerImage,
 	})
 
 	if err != nil {

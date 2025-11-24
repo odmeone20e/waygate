@@ -56,7 +56,7 @@ type Configuration struct {
 	DatabasePath      string
 	WGPublicPort      uint16
 
-	WireportProfile string
+	WaygateProfile string
 
 	WireguardConfigPath string
 	ResolvConfigPath    string
@@ -82,23 +82,23 @@ type Configuration struct {
 	CaddyRestartCommand     string
 	CoreDNSRestartCommand   string
 
-	WireportGatewayContainerName  string
-	WireportGatewayContainerImage string
-	WireportServerContainerName   string
-	WireportServerContainerImage  string
+	WaygateGatewayContainerName  string
+	WaygateGatewayContainerImage string
+	WaygateServerContainerName   string
+	WaygateServerContainerImage  string
 
 	CertExpiry time.Duration
 }
 
-var WireportProfile = GetEnv("WIREPORT_PROFILE", "default")
-var DatabasePath = GetEnv("DATABASE_PATH", getDefaultDatabasePath("/app/waygate/waygate.db", WireportProfile))
+var WaygateProfile = GetEnv("WAYGATE_PROFILE", "default")
+var DatabasePath = GetEnv("DATABASE_PATH", getDefaultDatabasePath("/app/waygate/waygate.db", WaygateProfile))
 
 var Config = &Configuration{
 	ControlServerPort: 4060,
 	DatabasePath:      DatabasePath,
 	WGPublicPort:      51820,
 
-	WireportProfile: WireportProfile,
+	WaygateProfile: WaygateProfile,
 
 	ResolvConfigPath:    GetEnv("RESOLV_CONFIG_PATH", "/etc/resolv.conf"),
 	WireguardConfigPath: GetEnv("WIREGUARD_CONFIG_PATH", "/etc/wireguard/wg0.conf"),
@@ -124,10 +124,10 @@ var Config = &Configuration{
 	CaddyRestartCommand:     "/usr/bin/caddy reload --config %s --adapter caddyfile",
 	CoreDNSRestartCommand:   "/bin/kill -9 $(pidof coredns)", // with actual restart (not -HUP) - to drop the cache
 
-	WireportGatewayContainerName:  "waygate-gateway",
-	WireportGatewayContainerImage: "ghcr.io/multionlabs/waygate",
-	WireportServerContainerName:   "waygate-server",
-	WireportServerContainerImage:  "ghcr.io/multionlabs/waygate",
+	WaygateGatewayContainerName:  "waygate-gateway",
+	WaygateGatewayContainerImage: "ghcr.io/multionlabs/waygate",
+	WaygateServerContainerName:   "waygate-server",
+	WaygateServerContainerImage:  "ghcr.io/multionlabs/waygate",
 
 	CertExpiry: time.Hour * 24 * 365 * 5, // 5 years
 }

@@ -13,7 +13,7 @@ import (
 
 var GatewayStartConfigureOnly = false
 var GatewaySSHKeyPassEmpty = false
-var GatewayDockerImage = config.Config.WireportGatewayContainerImage
+var GatewayDockerImage = config.Config.WaygateGatewayContainerImage
 var GatewayDockerImageTag = version.Version
 var forceGatewayTeardown = false
 
@@ -148,7 +148,7 @@ func init() {
 
 	UpGatewayCmd.Flags().String("ssh-key-path", "", "Path to SSH private key file (for passwordless authentication)")
 	UpGatewayCmd.Flags().BoolVar(&GatewaySSHKeyPassEmpty, "ssh-key-pass-empty", false, "Skip SSH key passphrase prompt (for passwordless SSH keys)")
-	UpGatewayCmd.Flags().StringVar(&GatewayDockerImage, "image", config.Config.WireportGatewayContainerImage, "Docker image to use for the waygate gateway container")
+	UpGatewayCmd.Flags().StringVar(&GatewayDockerImage, "image", config.Config.WaygateGatewayContainerImage, "Docker image to use for the waygate gateway container")
 	UpGatewayCmd.Flags().StringVar(&GatewayDockerImageTag, "image-tag", version.Version, "Image tag to use for the waygate gateway container")
 
 	DownGatewayCmd.Flags().String("ssh-key-path", "", "Path to SSH private key file (for passwordless authentication)")
@@ -157,6 +157,6 @@ func init() {
 
 	UpgradeGatewayCmd.Flags().String("ssh-key-path", "", "Path to SSH private key file (for passwordless authentication)")
 	UpgradeGatewayCmd.Flags().BoolVar(&GatewaySSHKeyPassEmpty, "ssh-key-pass-empty", false, "Skip SSH key passphrase prompt (for passwordless SSH keys)")
-	UpgradeGatewayCmd.Flags().StringVar(&GatewayDockerImage, "image", config.Config.WireportGatewayContainerImage, "Docker image to use for the waygate gateway container")
+	UpgradeGatewayCmd.Flags().StringVar(&GatewayDockerImage, "image", config.Config.WaygateGatewayContainerImage, "Docker image to use for the waygate gateway container")
 	UpgradeGatewayCmd.Flags().StringVar(&GatewayDockerImageTag, "image-tag", version.Version, "Image tag to use for the waygate gateway container")
 }

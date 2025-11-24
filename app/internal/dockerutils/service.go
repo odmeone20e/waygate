@@ -158,7 +158,7 @@ func EnsureDockerNetworkIsAttachedToAllContainers() error {
 	}
 
 	for _, container := range containers {
-		isGateway := slices.Contains(container.Names, fmt.Sprintf("/%s", config.Config.WireportGatewayContainerName))
+		isGateway := slices.Contains(container.Names, fmt.Sprintf("/%s", config.Config.WaygateGatewayContainerName))
 
 		if isGateway {
 			// Skip waygate-gateway container (should not be connected to the network)

@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Wireport version (e.g. '0.9.1') to publish"
+        description: "Waygate version (e.g. '0.9.1') to publish"
         required: true
 
 jobs:

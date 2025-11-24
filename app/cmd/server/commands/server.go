@@ -14,7 +14,7 @@ var forceServerCreation = false
 var quietServerCreation = false
 var dockerSubnet = ""
 var ServerSSHKeyPassEmpty = false
-var ServerDockerImage = config.Config.WireportServerContainerImage
+var ServerDockerImage = config.Config.WaygateServerContainerImage
 var ServerDockerImageTag = version.Version
 var forceServerTeardown = false
 
@@ -172,7 +172,7 @@ func init() {
 	UpServerCmd.Flags().String("ssh-key-path", "", "Path to SSH private key file (for passwordless authentication)")
 	UpServerCmd.Flags().BoolVar(&ServerSSHKeyPassEmpty, "ssh-key-pass-empty", false, "Skip SSH key passphrase prompt (for passwordless SSH keys)")
 	UpServerCmd.Flags().StringVar(&dockerSubnet, "docker-subnet", "", "Specify a custom Docker subnet for the server (e.g. 172.20.0.0/16)")
-	UpServerCmd.Flags().StringVar(&ServerDockerImage, "image", config.Config.WireportServerContainerImage, "Docker image to use for the waygate server container")
+	UpServerCmd.Flags().StringVar(&ServerDockerImage, "image", config.Config.WaygateServerContainerImage, "Docker image to use for the waygate server container")
 	UpServerCmd.Flags().StringVar(&ServerDockerImageTag, "image-tag", version.Version, "Image tag to use for the waygate server container")
 
 	DownServerCmd.Flags().String("ssh-key-path", "", "Path to SSH private key file (for passwordless authentication)")
@@ -181,6 +181,6 @@ func init() {
 
 	UpgradeServerCmd.Flags().String("ssh-key-path", "", "Path to SSH private key file (for passwordless authentication)")
 	UpgradeServerCmd.Flags().BoolVar(&ServerSSHKeyPassEmpty, "ssh-key-pass-empty", false, "Skip SSH key passphrase prompt (for passwordless SSH keys)")
-	UpgradeServerCmd.Flags().StringVar(&ServerDockerImage, "image", config.Config.WireportServerContainerImage, "Docker image to use for the waygate server container")
+	UpgradeServerCmd.Flags().StringVar(&ServerDockerImage, "image", config.Config.WaygateServerContainerImage, "Docker image to use for the waygate server container")
 	UpgradeServerCmd.Flags().StringVar(&ServerDockerImageTag, "image-tag", version.Version, "Image tag to use for the waygate server container")
 }

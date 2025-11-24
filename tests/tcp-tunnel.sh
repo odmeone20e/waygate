@@ -32,7 +32,7 @@ LOCAL_PORT=8000
 PUBLIC_SERVICE=tcp://${PUBLIC_HOST}:${PUBLIC_PORT}
 LOCAL_SERVICE=tcp://${LOCAL_HOST}:${LOCAL_PORT}
 
-echo "🧪 Wireport TCP Tunnel Test"
+echo "🧪 Waygate TCP Tunnel Test"
 echo "================================"
 echo "Public:  ${PUBLIC_SERVICE}"
 echo "Local:   ${LOCAL_SERVICE}"

@@ -376,7 +376,7 @@ waygate gateway up sshuser@140.120.110.10:22 --ssh-key-path ~/.ssh/id_rsa --ssh-
 
 * 22/tcp (SSH)
 * 80/tcp and 443/tcp (HTTP/HTTPS)
-* 4060/tcp (Wireport control channel)
+* 4060/tcp (Waygate control channel)
 * 51820/udp (WireGuard)
 * 32420-32421/tcp+udp (reserved ports for exposing services with waygate)
 
@@ -429,7 +429,7 @@ This command supports different protocols (HTTP, HTTPS, TCP, UDP) and automatica
 ### Client installation
 
 **Client Node Configuration** is stored in `~/.waygate/<profile>` folder.
-Here `<profile>` equals `default`, unless it's explicitly overridden with `WIREPORT_PROFILE` environment variable (e.g., `WIREPORT_PROFILE=dev waygate -v`).
+Here `<profile>` equals `default`, unless it's explicitly overridden with `WAYGATE_PROFILE` environment variable (e.g., `WAYGATE_PROFILE=dev waygate -v`).
 
 ### Gateway Bootstrapping
 
@@ -529,7 +529,7 @@ For testing HTTP, UDP, TCP tunnelling, you can use the automated test scripts pr
 Before running any of the tests, you may want to specify waygate profile (if you're using several profiles on your machine), e.g.:
 
 ```bash
-export WIREPORT_PROFILE=development
+export WAYGATE_PROFILE=development
 ```
 
 ### Usage example:
@@ -551,7 +551,7 @@ Each test:
 Sample output for a successful http test run:
 
 ```bash
-🧪 Wireport HTTP Tunnel Test
+🧪 Waygate HTTP Tunnel Test
 ================================
 Public:  http://140.120.110.10:32421
 Local:   http://10.0.0.2:8080

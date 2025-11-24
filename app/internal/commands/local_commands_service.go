@@ -170,7 +170,7 @@ func (s *LocalCommandsService) GatewayStatus(creds *ssh.Credentials, stdOut io.W
 
 	// waygate Status Check
 	fmt.Fprintf(stdOut, "🚀 waygate Gateway Status\n")
-	isRunning, err := sshService.IsWireportGatewayContainerRunning()
+	isRunning, err := sshService.IsWaygateGatewayContainerRunning()
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
 		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
@@ -183,7 +183,7 @@ func (s *LocalCommandsService) GatewayStatus(creds *ssh.Credentials, stdOut io.W
 		fmt.Fprintf(stdOut, "   Status: ✅ Running\n")
 
 		// Get detailed container status
-		containerStatus, err = sshService.GetWireportContainerStatus()
+		containerStatus, err = sshService.GetWaygateContainerStatus()
 		if err == nil && containerStatus != "" {
 			fmt.Fprintf(stdOut, "   Details: %s\n", containerStatus)
 		}
@@ -191,7 +191,7 @@ func (s *LocalCommandsService) GatewayStatus(creds *ssh.Credentials, stdOut io.W
 		fmt.Fprintf(stdOut, "   Status: ❌ Not Running\n")
 
 		// Check if container exists but is stopped
-		containerStatus, err = sshService.GetWireportContainerStatus()
+		containerStatus, err = sshService.GetWaygateContainerStatus()
 		if err == nil && containerStatus != "" {
 			fmt.Fprintf(stdOut, "   Details: %s\n", containerStatus)
 		}
@@ -226,7 +226,7 @@ func (s *LocalCommandsService) GatewayUp(creds *ssh.Credentials, image string, i
 	fmt.Fprintf(errOut, "   Status: ✅ Connected\n\n")
 	fmt.Fprintf(errOut, "🔍 Checking current status...\n")
 
-	isRunning, err := sshService.IsWireportGatewayContainerRunning()
+	isRunning, err := sshService.IsWaygateGatewayContainerRunning()
 	if err != nil {
 		fmt.Fprintf(errOut, "   Status: ❌ Check Failed\n")
 		fmt.Fprintf(errOut, "   Error:  %v\n\n", err)
@@ -244,7 +244,7 @@ func (s *LocalCommandsService) GatewayUp(creds *ssh.Credentials, image string, i
 	fmt.Fprintf(errOut, "📦 Installing waygate gateway...\n")
 	fmt.Fprintf(errOut, "   Gateway: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
 
-	_, clientJoinToken, err := sshService.InstallWireportGateway(image, imageTag)
+	_, clientJoinToken, err := sshService.InstallWaygateGateway(image, imageTag)
 
 	if err != nil {
 		fmt.Fprintf(errOut, "   Status: ❌ Installation Failed\n")
@@ -255,7 +255,7 @@ func (s *LocalCommandsService) GatewayUp(creds *ssh.Credentials, image string, i
 	fmt.Fprintf(errOut, "   Status: ✅ Installation Completed\n\n")
 	fmt.Fprintf(errOut, "✅ Verifying installation...\n")
 
-	installationConfirmed, err := sshService.IsWireportGatewayContainerRunning()
+	installationConfirmed, err := sshService.IsWaygateGatewayContainerRunning()
 	if err != nil {
 		fmt.Fprintf(errOut, "   Status: ❌ Verification Failed\n")
 		fmt.Fprintf(errOut, "   Error:  %v\n\n", err)
@@ -316,7 +316,7 @@ func (s *LocalCommandsService) GatewayDown(creds *ssh.Credentials, stdOut io.Wri
 	fmt.Fprintf(stdOut, "   Status: ✅ Connected\n\n")
 
 	// Check if gateway is running
-	isRunning, err := sshService.IsWireportGatewayContainerRunning()
+	isRunning, err := sshService.IsWaygateGatewayContainerRunning()
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
 		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
@@ -333,7 +333,7 @@ func (s *LocalCommandsService) GatewayDown(creds *ssh.Credentials, stdOut io.Wri
 	fmt.Fprintf(stdOut, "🛑 Gateway node Teardown\n")
 	fmt.Fprintf(stdOut, "   Gateway: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
 
-	success, err := sshService.TeardownWireportGateway()
+	success, err := sshService.TeardownWaygateGateway()
 
 	if err != nil || !success {
 		fmt.Fprintf(stdOut, "   Status: ❌ Teardown Failed\n")
@@ -383,7 +383,7 @@ func (s *LocalCommandsService) GatewayUpgrade(creds *ssh.Credentials, image stri
 	fmt.Fprintf(stdOut, "🔄 Upgrading waygate gateway...\n")
 	fmt.Fprintf(stdOut, "   Gateway: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
 
-	success, err := sshService.UpgradeWireportGateway(image, imageTag)
+	success, err := sshService.UpgradeWaygateGateway(image, imageTag)
 
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Failed\n")
@@ -791,7 +791,7 @@ func (s *LocalCommandsService) ServerStatus(creds *ssh.Credentials, stdOut io.Wr
 
 	// waygate Server Status Check
 	fmt.Fprintf(stdOut, "🚀 waygate Server Status\n")
-	isRunning, err := sshService.IsWireportServerContainerRunning()
+	isRunning, err := sshService.IsWaygateServerContainerRunning()
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
 		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
@@ -804,7 +804,7 @@ func (s *LocalCommandsService) ServerStatus(creds *ssh.Credentials, stdOut io.Wr
 		fmt.Fprintf(stdOut, "   Status: ✅ Running\n")
 
 		// Get detailed container status
-		containerStatus, err = sshService.GetWireportServerContainerStatus()
+		containerStatus, err = sshService.GetWaygateServerContainerStatus()
 		if err == nil && containerStatus != "" {
 			fmt.Fprintf(stdOut, "   Details: %s\n", containerStatus)
 		}
@@ -812,7 +812,7 @@ func (s *LocalCommandsService) ServerStatus(creds *ssh.Credentials, stdOut io.Wr
 		fmt.Fprintf(stdOut, "   Status: ❌ Not Running\n")
 
 		// Check if container exists but is stopped
-		containerStatus, err = sshService.GetWireportServerContainerStatus()
+		containerStatus, err = sshService.GetWaygateServerContainerStatus()
 		if err == nil && containerStatus != "" {
 			fmt.Fprintf(stdOut, "   Details: %s\n", containerStatus)
 		}
@@ -823,7 +823,7 @@ func (s *LocalCommandsService) ServerStatus(creds *ssh.Credentials, stdOut io.Wr
 
 	// Docker Network Status Check
 	fmt.Fprintf(stdOut, "🌐 waygate Docker Network\n")
-	networkStatus, err := sshService.GetWireportNetworkStatus()
+	networkStatus, err := sshService.GetWaygateNetworkStatus()
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
 		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
@@ -880,7 +880,7 @@ func (s *LocalCommandsService) ServerUp(creds *ssh.Credentials, image string, im
 	fmt.Fprintf(stdOut, "📦 Installing waygate server...\n")
 	fmt.Fprintf(stdOut, "   Server: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
 
-	_, err = sshService.InstallWireportServer(serverJoinToken, image, imageTag)
+	_, err = sshService.InstallWaygateServer(serverJoinToken, image, imageTag)
 
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Connection Failed\n")
@@ -892,7 +892,7 @@ func (s *LocalCommandsService) ServerUp(creds *ssh.Credentials, image string, im
 
 	// Verification
 	fmt.Fprintf(stdOut, "✅ Verifying installation...\n")
-	installationConfirmed, err := sshService.IsWireportServerContainerRunning()
+	installationConfirmed, err := sshService.IsWaygateServerContainerRunning()
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Verification Failed\n")
 		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
@@ -963,7 +963,7 @@ func (s *LocalCommandsService) ServerDown(creds *ssh.Credentials, stdOut io.Writ
 	fmt.Fprintf(stdOut, "   Status: ✅ Connected\n\n")
 
 	// Check if server is running
-	isRunning, err := sshService.IsWireportServerContainerRunning()
+	isRunning, err := sshService.IsWaygateServerContainerRunning()
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Check Failed\n")
 		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
@@ -980,7 +980,7 @@ func (s *LocalCommandsService) ServerDown(creds *ssh.Credentials, stdOut io.Writ
 	fmt.Fprintf(stdOut, "🛑 Server node Teardown\n")
 	fmt.Fprintf(stdOut, "   Server: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
 
-	_, err = sshService.TeardownWireportServer()
+	_, err = sshService.TeardownWaygateServer()
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Teardown Failed\n")
 		fmt.Fprintf(stdOut, "   Error:  %v\n\n", err)
@@ -1041,7 +1041,7 @@ func (s *LocalCommandsService) ServerUpgrade(creds *ssh.Credentials, image strin
 	fmt.Fprintf(stdOut, "🔄 Upgrading waygate server...\n")
 	fmt.Fprintf(stdOut, "   Server: %s@%s:%d\n", creds.Username, creds.Host, creds.Port)
 
-	success, err := sshService.UpgradeWireportServer(image, imageTag)
+	success, err := sshService.UpgradeWaygateServer(image, imageTag)
 
 	if err != nil {
 		fmt.Fprintf(stdOut, "   Status: ❌ Failed\n")

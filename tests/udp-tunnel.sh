@@ -32,7 +32,7 @@ LOCAL_PORT=9999
 PUBLIC_SERVICE=udp://${PUBLIC_HOST}:${PUBLIC_PORT}
 LOCAL_SERVICE=udp://${LOCAL_HOST}:${LOCAL_PORT}
 
-echo "🧪 Wireport UDP Tunnel Test"
+echo "🧪 Waygate UDP Tunnel Test"
 echo "================================"
 echo "Public:  ${PUBLIC_SERVICE}"
 echo "Local:   ${LOCAL_SERVICE}"
